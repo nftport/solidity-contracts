@@ -1,5 +1,6 @@
 require("dotenv").config();
 const PRIVATE_KEY = process.env.PRIVATE_KEY;
+const PRIVATE_KEY_MAINNET = process.env.PRIVATE_KEY_MAINNET;
 
 require('hardhat-abi-exporter');
 
@@ -30,6 +31,10 @@ module.exports = {
     matic: {
       url: "https://rpc-mumbai.maticvigil.com",
       accounts: [PRIVATE_KEY]
+    },
+    maticMainnet: {
+      url: "https://rpc-mainnet.maticvigil.com/",
+      accounts: [PRIVATE_KEY_MAINNET]
     }
   },
   solidity: {
