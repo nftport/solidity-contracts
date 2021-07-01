@@ -1,6 +1,9 @@
 require("dotenv").config();
-const PRIVATE_KEY = process.env.PRIVATE_KEY;
-const PRIVATE_KEY_MAINNET = process.env.PRIVATE_KEY_MAINNET;
+const POLYGON_PRIVATE_KEY_MUMBAI = process.env.POLYGON_PRIVATE_KEY_MUMBAI;
+const POLYGON_PRIVATE_KEY_MAINNET = process.env.POLYGON_PRIVATE_KEY_MAINNET;
+
+const ETHEREUM_PRIVATE_KEY_RINKEBY = process.env.ETHEREUM_PRIVATE_KEY_RINKEBY;
+const ETHEREUM_PRIVATE_KEY_MAINNET = process.env.ETHEREUM_PRIVATE_KEY_MAINNET;
 
 require('hardhat-abi-exporter');
 
@@ -30,11 +33,15 @@ module.exports = {
     },
     matic: {
       url: "https://rpc-mumbai.maticvigil.com",
-      accounts: [PRIVATE_KEY]
+      accounts: [POLYGON_PRIVATE_KEY_MUMBAI]
     },
     maticMainnet: {
       url: "https://rpc-mainnet.maticvigil.com/",
-      accounts: [PRIVATE_KEY_MAINNET]
+      accounts: [POLYGON_PRIVATE_KEY_MAINNET]
+    },
+    ethereumRinkeby: {
+      url: "https://eth-rinkeby.alchemyapi.io/v2/GdJgwquJRioF66LS4Km5fGmBxRbTHWp2",
+      accounts: [ETHEREUM_PRIVATE_KEY_RINKEBY]
     }
   },
   solidity: {
