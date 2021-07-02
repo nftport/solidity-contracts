@@ -12,7 +12,7 @@ contract NFT is Ownable, ERC721URIStorage {
     using Counters for Counters.Counter;
     Counters.Counter private _tokenIds;
 
-    constructor() ERC721("NFTPort", "NFT") {}
+    constructor(string memory _name, string memory _symbol) ERC721(_name, _symbol) {}
 
     function mintToCaller(address caller, string memory tokenURI)
     public onlyOwner
