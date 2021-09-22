@@ -24,3 +24,9 @@ npx hardhat run scripts/deploy-script.js --network matic
 npx hardhat run scripts/deploy-script.js --network maticMainnet
 ```
 
+##### To get the contracts bytecode:
+```
+npx hardhat compile
+```
+Check artifacts/contracts/{contractName}.sol/{contractName}.json["bytecode"]
+
