@@ -13,7 +13,7 @@
       },
       {
         "internalType": "bool",
-        "name": "_globalUpdatableTokenUri",
+        "name": "_isTokenUrisUpdatable",
         "type": "bool"
       }
     ],
@@ -216,19 +216,6 @@
     "type": "function"
   },
   {
-    "inputs": [],
-    "name": "globalUpdatableTokenUri",
-    "outputs": [
-      {
-        "internalType": "bool",
-        "name": "",
-        "type": "bool"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
     "inputs": [
       {
         "internalType": "address",
@@ -242,6 +229,19 @@
       }
     ],
     "name": "isApprovedForAll",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "isTokenUrisUpdatable",
     "outputs": [
       {
         "internalType": "bool",

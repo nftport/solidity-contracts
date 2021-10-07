@@ -16,7 +16,7 @@ describe("NFT", function () {
     await nft.deployed();
     expect(await nft.name()).to.equal("mock_name");
     expect(await nft.symbol()).to.equal("symbol");
-    expect(await nft.globalUpdatableTokenUri()).to.equal(false);
+    expect(await nft.isTokenUrisUpdatable()).to.equal(false);
   });
 
   it("It should deploy the contract, tokens uri's are initially frozen, mint token, trying to update URI should lead to error, freeze individual token should revert", async () => {
