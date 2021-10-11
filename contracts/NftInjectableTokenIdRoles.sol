@@ -6,11 +6,13 @@ import "@openzeppelin/contracts/access/AccessControl.sol";
 
 contract NftInjectableTokenIdRoles is ERC721URIStorage, AccessControl {
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
+    address private _owner;
 
     constructor(string memory _name, string memory _symbol, address owner) ERC721(_name, _symbol) {
         _setupRole(DEFAULT_ADMIN_ROLE, owner);
         _setupRole(MINTER_ROLE, owner);
         _setupRole(MINTER_ROLE, msg.sender);
+        _owner = owner;
     }
 
 
@@ -31,5 +33,9 @@ contract NftInjectableTokenIdRoles is ERC721URIStorage, AccessControl {
     returns (bool)
     {
         return ERC721.supportsInterface(interfaceId);
+    }
+
+    function owner() public view returns (address) {
+        return _owner;
     }
 }
