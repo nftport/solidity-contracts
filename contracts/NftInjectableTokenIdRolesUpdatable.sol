@@ -6,6 +6,7 @@ import "@openzeppelin/contracts/access/AccessControl.sol";
 
 contract NftInjectableTokenIdRolesUpdatable is ERC721URIStorage, AccessControl {
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
+    address private _owner;
 
     bool public isTokenUrisUpdatable;
     mapping (uint256 => bool) public updatableTokenUris;
@@ -18,6 +19,7 @@ contract NftInjectableTokenIdRolesUpdatable is ERC721URIStorage, AccessControl {
         _setupRole(MINTER_ROLE, owner);
         _setupRole(MINTER_ROLE, msg.sender);
         isTokenUrisUpdatable = _isTokenUrisUpdatable;
+        _owner = owner;
     }
 
     function mintToCaller(address caller, uint256 tokenId, string memory tokenURI)
@@ -42,6 +44,9 @@ contract NftInjectableTokenIdRolesUpdatable is ERC721URIStorage, AccessControl {
         return ERC721.supportsInterface(interfaceId);
     }
 
+    function owner() public view returns (address) {
+        return _owner;
+    }
 
     function updateTokenUri(uint256 _tokenId, string memory _tokenUri)
     public 
