@@ -11,6 +11,8 @@ RUN apt-get install -y nodejs
 RUN mkdir .npm
 RUN chown -R 1006:root .npm
 RUN mkdir -p /.cache && chown -R 1006:root /.cache
+RUN mkdir -p /.config && chown -R 1006:root /.config
+RUN mkdir -p /.local && chown -R 1006:root /.local
 
 RUN apt-get update && apt-get install -y gcc
 
