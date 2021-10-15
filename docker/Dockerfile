@@ -5,7 +5,19 @@ SHELL ["/bin/bash", "-c"]
 # CI SPECIFIC - Install curl and NodeJS 14
 # NodeJS is used only in CI to push our docs to Stoplight(see Jenkinsfile)
 RUN apt-get update && apt-get upgrade -y
-RUN apt-get install -y curl
+RUN apt-get install -y curl software-properties-common locales
+
+RUN locale-gen en_US.UTF-8
+ENV LANG en_US.UTF-8
+ENV LANGUAGE en_US:en
+ENV LC_ALL en_US.UTF-8
+
+RUN apt-get install wget gdebi -y
+RUN wget https://github.com/souffle-lang/souffle/releases/download/1.6.2/souffle_1.6.2-1_amd64.deb -O /tmp/souffle.deb && gdebi --n /tmp/souffle.deb
+RUN apt-get update && apt-get -y install graphviz
+RUN curl -L https://github.com/ethereum/solidity/releases/download/v$SOLC/solc-static-linux > /usr/bin/solc-$SOLC && \
+    chmod +x /usr/bin/solc-$SOLC && \
+    ln -s /usr/bin/solc-$SOLC /usr/local/bin/solc
 RUN curl -sL https://deb.nodesource.com/setup_14.x | bash -
 RUN apt-get install -y nodejs
 RUN mkdir .npm
@@ -22,6 +34,24 @@ RUN chown -R 1006:root /opt/conda
 
 ADD environment.yml /
 RUN conda env create -f environment.yml
+
+RUN git clone https://github.com/eth-sri/securify2.git
+RUN cd securify2 && \
+    source /opt/conda/etc/profile.d/conda.sh && \
+    conda activate solidity-contracts && \
+    python setup.py install && \
+    pip install -r requirements.txt && \
+    pip install requests
+
+RUN cd securify2/securify/staticanalysis/libfunctors/ && ./compile_functors.sh
+RUN cd securify2/securify/staticanalysis/souffle_analysis && \
+        souffle --dl-program=../dl-program \
+        --fact-dir=/sec/securify/staticanalysis/facts_in \
+        --output-dir=/sec/securify/staticanalysis/facts_out \
+        -L../libfunctors -w analysis.dl
+
+ENV LD_LIBRARY_PATH securify2/securify/securify/staticanalysis/libfunctors
+RUN cd securify2/securify && securify staticanalysis/testContract.sol
 
 # Create new user to not run in sudo mode
 RUN useradd --create-home appuser
