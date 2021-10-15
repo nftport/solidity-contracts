@@ -1,4 +1,5 @@
 FROM continuumio/miniconda3:4.10.3
+ARG SOLC=0.8.0
 
 SHELL ["/bin/bash", "-c"]
 
@@ -43,15 +44,18 @@ RUN cd securify2 && \
     pip install -r requirements.txt && \
     pip install requests
 
-RUN cd securify2/securify/staticanalysis/libfunctors/ && ./compile_functors.sh
-RUN cd securify2/securify/staticanalysis/souffle_analysis && \
+RUN cd /securify2/securify/staticanalysis/libfunctors/ && ./compile_functors.sh
+RUN cd /securify2/securify/staticanalysis/souffle_analysis && \
         souffle --dl-program=../dl-program \
-        --fact-dir=/sec/securify/staticanalysis/facts_in \
-        --output-dir=/sec/securify/staticanalysis/facts_out \
+        --fact-dir=/securify2/securify/staticanalysis/facts_in \
+        --output-dir=/securify2/securify/staticanalysis/facts_out \
         -L../libfunctors -w analysis.dl
 
-ENV LD_LIBRARY_PATH securify2/securify/securify/staticanalysis/libfunctors
-RUN cd securify2/securify && securify staticanalysis/testContract.sol
+ENV LD_LIBRARY_PATH /securify2/securify/staticanalysis/libfunctors
+RUN cd /securify2/securify && \
+    source /opt/conda/etc/profile.d/conda.sh && \
+    conda activate solidity-contracts && \
+    securify staticanalysis/testContract.sol
 
 # Create new user to not run in sudo mode
 RUN useradd --create-home appuser
