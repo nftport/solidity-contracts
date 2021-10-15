@@ -52,10 +52,7 @@ RUN cd /securify2/securify/staticanalysis/souffle_analysis && \
         -L../libfunctors -w analysis.dl
 
 ENV LD_LIBRARY_PATH /securify2/securify/staticanalysis/libfunctors
-RUN cd /securify2/securify && \
-    source /opt/conda/etc/profile.d/conda.sh && \
-    conda activate solidity-contracts && \
-    securify staticanalysis/testContract.sol
+RUN chmod -R o+w /securify2
 
 # Create new user to not run in sudo mode
 RUN useradd --create-home appuser
