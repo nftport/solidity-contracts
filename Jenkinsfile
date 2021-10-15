@@ -15,6 +15,10 @@ pipeline {
       filename './docker/Dockerfile'
     }
   }
+  environment {
+    MYTHX_API_KEY = credentials('mythx-api-key')
+
+  }
   stages {
     stage('npm install') {
       steps {
@@ -113,6 +117,44 @@ pipeline {
         }
       }
     }*/
+    stage('Mythx Analyze Quick') {
+      when {
+        expression {env.GIT_BRANCH != 'origin/master'}
+      }
+      steps {
+        gitStatusWrapper(
+            gitHubContext: "Mythx Analyze",
+            credentialsId: 'github',
+            description: 'Mythx Analyze',
+            successDescription: 'Mythx Analyze passed',
+            failureDescription: 'Mythx Analyze failed')
+        {
+          sh '''
+          source activate $(head -1 environment.yml | cut -d' ' -f2)
+          mythx --yes analyze --mode quick contracts --remap-import "@openzeppelin/=$(pwd)/node_modules/@openzeppelin/" --swc-blacklist SWC-123
+          '''
+        }
+      }
+    }
+    stage('Mythx Analyze Standard') {
+      when {
+        expression {env.GIT_BRANCH == 'origin/master'}
+      }
+      steps {
+        gitStatusWrapper(
+            gitHubContext: "Mythx Analyze",
+            credentialsId: 'github',
+            description: 'Mythx Analyze',
+            successDescription: 'Mythx Analyze passed',
+            failureDescription: 'Mythx Analyze failed')
+        {
+          sh '''
+          source activate $(head -1 environment.yml | cut -d' ' -f2)
+          mythx --yes analyze --mode standard contracts --remap-import "@openzeppelin/=$(pwd)/node_modules/@openzeppelin/" --swc-blacklist SWC-123
+          '''
+        }
+      }
+    }
   }
   post {
     always {
