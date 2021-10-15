@@ -13,6 +13,7 @@ RUN chown -R 1006:root .npm
 RUN mkdir -p /.cache && chown -R 1006:root /.cache
 RUN mkdir -p /.config && chown -R 1006:root /.config
 RUN mkdir -p /.local && chown -R 1006:root /.local
+RUN mkdir -p /.solcx && chown -R 1006:root /.solcx
 
 RUN apt-get update && apt-get install -y gcc
 
