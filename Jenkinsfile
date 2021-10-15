@@ -119,7 +119,7 @@ pipeline {
     }*/
     stage('Mythx Analyze Quick') {
       when {
-        expression {env.GIT_BRANCH != 'origin/master'}
+        expression {env.GIT_BRANCH != 'master'}
       }
       steps {
         gitStatusWrapper(
@@ -138,7 +138,7 @@ pipeline {
     }
     stage('Mythx Analyze Standard') {
       when {
-        expression {env.GIT_BRANCH == 'origin/master'}
+        expression {env.GIT_BRANCH == 'master'}
       }
       steps {
         gitStatusWrapper(
