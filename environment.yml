@@ -1,0 +1,6 @@
+name: solidity-contracts
+dependencies:
+  - python=3.7.11
+  - pip=21.2.2
+  - pip:
+      - mythx-cli==0.6.22
