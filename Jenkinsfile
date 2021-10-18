@@ -66,6 +66,23 @@ pipeline {
         }
       }
     }
+    stage('Unit Tests') {
+      steps {
+         catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+            gitStatusWrapper(
+                gitHubContext: "Unit Tests",
+                credentialsId: 'github',
+                description: 'Unit Tests',
+                successDescription: 'Unit Tests passed',
+                failureDescription: 'Unit Tests failed')
+            {
+              sh '''
+              npx hardhat test --network hardhat
+              '''
+            }
+         }
+      }
+    }
     stage('Coverage') {
       steps {
          catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
