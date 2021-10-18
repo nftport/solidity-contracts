@@ -8,17 +8,17 @@ contract NftInjectableTokenIdRolesUpdatable is ERC721URIStorage, AccessControl {
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
     address private _owner;
 
-    bool public isTokenUrisUpdatable;
-    mapping (uint256 => bool) public updatableTokenUris;
+    bool public isFreezeTokenUris;
+    mapping (uint256 => bool) public freezeTokenUris;
 
     event PermanentURI(string _value, uint256 indexed _id); // https://docs.opensea.io/docs/metadata-standards
     event PermanentURIGlobal();
 
-    constructor(string memory _name, string memory _symbol, address owner, bool _isTokenUrisUpdatable) ERC721(_name, _symbol) {
+    constructor(string memory _name, string memory _symbol, address owner, bool _isFreezeTokenUris) ERC721(_name, _symbol) {
         _setupRole(DEFAULT_ADMIN_ROLE, owner);
         _setupRole(MINTER_ROLE, owner);
         _setupRole(MINTER_ROLE, msg.sender);
-        isTokenUrisUpdatable = _isTokenUrisUpdatable;
+        isFreezeTokenUris = _isFreezeTokenUris;
         _owner = owner;
     }
 
@@ -28,10 +28,7 @@ contract NftInjectableTokenIdRolesUpdatable is ERC721URIStorage, AccessControl {
     {
         _safeMint(caller, tokenId);
         _setTokenURI(tokenId, tokenURI);
-
-        if (isTokenUrisUpdatable) {
-            updatableTokenUris[tokenId] = true;
-        }
+        
         return tokenId;
     }
 
@@ -48,33 +45,28 @@ contract NftInjectableTokenIdRolesUpdatable is ERC721URIStorage, AccessControl {
         return _owner;
     }
 
-    function updateTokenUri(uint256 _tokenId, string memory _tokenUri)
+    function updateTokenUri(uint256 _tokenId, string memory _tokenUri, bool _isFreezeTokenUri)
     public 
     onlyRole(MINTER_ROLE) {
         require(_exists(_tokenId), "NFT: update URI query for nonexistent token");
-        require(isTokenUrisUpdatable == true, "NFT: Token uris are frozen globally");
-        require(updatableTokenUris[_tokenId] == true, "NFT: Token is not updatable");
-        require(keccak256(bytes(tokenURI(_tokenId))) != keccak256(bytes(_tokenUri)), "NFT: New token URI is same as updated");
-        _setTokenURI(_tokenId, _tokenUri);
-    }
+        require(isFreezeTokenUris == false, "NFT: Token uris are frozen globally");
+        require(freezeTokenUris[_tokenId] != true, "NFT: Token is frozen");
 
-
-    function freezeTokenUri(uint256 _tokenId) 
-    public 
-    onlyRole(MINTER_ROLE) {
-        require(_exists(_tokenId), "NFT: freeze URI query for nonexistent token");
-        require(isTokenUrisUpdatable == true, "NFT: Token uris are frozen globally");
-        require(updatableTokenUris[_tokenId] == true, "NFT: Token is not updatable");
-        updatableTokenUris[_tokenId] = false;
-
-        emit PermanentURI(tokenURI(_tokenId), _tokenId);
+        if (bytes(_tokenUri).length != 0) {
+           require(keccak256(bytes(tokenURI(_tokenId))) != keccak256(bytes(_tokenUri)), "NFT: New token URI is same as updated");
+            _setTokenURI(_tokenId, _tokenUri);
+        }
+        if (_isFreezeTokenUri) {
+            freezeTokenUris[_tokenId] = true;
+            emit PermanentURI(tokenURI(_tokenId), _tokenId);
+        }
     }
 
     function freezeAllTokenUris() 
     public 
     onlyRole(MINTER_ROLE) {
-        require(isTokenUrisUpdatable == true, "NFT: Token uris are already frozen");
-        isTokenUrisUpdatable = false;
+        require(isFreezeTokenUris == false, "NFT: Token uris are already frozen");
+        isFreezeTokenUris = true;
 
         emit PermanentURIGlobal();
     }
