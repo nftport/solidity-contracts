@@ -28,7 +28,6 @@ contract NftInjectableTokenIdRolesUpdatable is ERC721URIStorage, AccessControl {
     {
         _safeMint(caller, tokenId);
         _setTokenURI(tokenId, tokenURI);
-        
         return tokenId;
     }
 
@@ -46,14 +45,14 @@ contract NftInjectableTokenIdRolesUpdatable is ERC721URIStorage, AccessControl {
     }
 
     function updateTokenUri(uint256 _tokenId, string memory _tokenUri, bool _isFreezeTokenUri)
-    public 
+    public
     onlyRole(MINTER_ROLE) {
         require(_exists(_tokenId), "NFT: update URI query for nonexistent token");
         require(isFreezeTokenUris == false, "NFT: Token uris are frozen globally");
         require(freezeTokenUris[_tokenId] != true, "NFT: Token is frozen");
 
         if (bytes(_tokenUri).length != 0) {
-           require(keccak256(bytes(tokenURI(_tokenId))) != keccak256(bytes(_tokenUri)), "NFT: New token URI is same as updated");
+            require(keccak256(bytes(tokenURI(_tokenId))) != keccak256(bytes(_tokenUri)), "NFT: New token URI is same as updated");
             _setTokenURI(_tokenId, _tokenUri);
         }
         if (_isFreezeTokenUri) {
@@ -62,8 +61,8 @@ contract NftInjectableTokenIdRolesUpdatable is ERC721URIStorage, AccessControl {
         }
     }
 
-    function freezeAllTokenUris() 
-    public 
+    function freezeAllTokenUris()
+    public
     onlyRole(MINTER_ROLE) {
         require(isFreezeTokenUris == false, "NFT: Token uris are already frozen");
         isFreezeTokenUris = true;
