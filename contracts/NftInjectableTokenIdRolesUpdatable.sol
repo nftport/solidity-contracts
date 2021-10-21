@@ -50,6 +50,7 @@ contract NftInjectableTokenIdRolesUpdatable is ERC721URIStorage, AccessControl {
         require(_exists(_tokenId), "NFT: update URI query for nonexistent token");
         require(isFreezeTokenUris == false, "NFT: Token uris are frozen globally");
         require(freezeTokenUris[_tokenId] != true, "NFT: Token is frozen");
+        require(_isFreezeTokenUri || (bytes(_tokenUri).length != 0), "NFT: Either _tokenUri or _isFreezeTokenUri=true required");
 
         if (bytes(_tokenUri).length != 0) {
             require(keccak256(bytes(tokenURI(_tokenId))) != keccak256(bytes(_tokenUri)), "NFT: New token URI is same as updated");
