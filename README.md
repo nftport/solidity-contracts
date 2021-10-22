@@ -30,3 +30,22 @@ npx hardhat compile
 ```
 Check artifacts/contracts/{contractName}.sol/{contractName}.json["bytecode"]
 
+
+### Verifying contracts on Polygonscan
+
+1) Flatten contract source code
+```
+npm i @poanet/solidity-flattener
+poa-solidity-flattener ./contracts/contract.sol
+```
+2) Open Contract on Polygonscan, click Contract -> Verify and Publish
+3) Compiler type: Solidity (single file)
+4) Compiler version: 0.8.0
+5) License MIT
+6) Optimization -> Yes
+7) Paste flattened solidity code
+8) Get ABI encoded constructor params
+    - https://abi.hashex.org/, Put contract ABI there
+    - Add constructor params (can be taken from nft_contract table)
+9) Verify and publish    
+
