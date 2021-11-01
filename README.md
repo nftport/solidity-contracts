@@ -10,7 +10,6 @@ npm install
 ```
 cp template.env .env
 ```
-Add valid private keys to .env file (format must be correct)
 ```
 npx hardhat test --network hardhat
 ```
@@ -19,7 +18,7 @@ npx hardhat test --network hardhat
 ```
 cp template.env .env
 ```
-Add wallet private key to .env file 
+Add wallet private key to .env file (template.env contains dummy private keys by default)
 ```
 npx hardhat run scripts/deploy-script.js --network {networkName}
 ```
