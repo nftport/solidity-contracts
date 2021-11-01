@@ -1,5 +1,5 @@
 
-# Polygon contracts
+# Solidity contracts
 
 ### Setup:
 ```
@@ -8,6 +8,9 @@ npm install
 
 ### Run tests:
 ```
+cp template.env .env
+```
+```
 npx hardhat test --network hardhat
 ```
 
@@ -15,14 +18,14 @@ npx hardhat test --network hardhat
 ```
 cp template.env .env
 ```
-Add wallet private key to .env file 
+Add wallet private key to .env file (template.env contains dummy private keys by default)
 ```
-npx hardhat run scripts/deploy-script.js --network matic
+npx hardhat run scripts/deploy-script.js --network {networkName}
 ```
-#### MAINNET:
-```
-npx hardhat run scripts/deploy-script.js --network maticMainnet
-```
+networkName can be:
+- "matic" (this is mumbai testnet)
+- "maticMainnet" 
+- "ethereumRinkeby"
 
 ##### To get the contracts bytecode:
 ```
@@ -40,7 +43,7 @@ poa-solidity-flattener ./contracts/contract.sol
 ```
 2) Open Contract on Polygonscan, click Contract -> Verify and Publish
 3) Compiler type: Solidity (single file)
-4) Compiler version: 0.8.0
+4) Compiler version: 0.8.9
 5) License MIT
 6) Optimization -> Yes
 7) Paste flattened solidity code
