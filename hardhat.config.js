@@ -3,6 +3,8 @@ const POLYGON_PRIVATE_KEY_MUMBAI = process.env.POLYGON_PRIVATE_KEY_MUMBAI;
 const POLYGON_PRIVATE_KEY_MAINNET = process.env.POLYGON_PRIVATE_KEY_MAINNET;
 
 const ETHEREUM_PRIVATE_KEY_RINKEBY = process.env.ETHEREUM_PRIVATE_KEY_RINKEBY;
+const RINKEBY_GATEWAY_URL = process.env.RINKEBY_GATEWAY_URL;
+
 const ETHEREUM_PRIVATE_KEY_MAINNET = process.env.ETHEREUM_PRIVATE_KEY_MAINNET;
 
 require('hardhat-abi-exporter');
@@ -39,7 +41,7 @@ module.exports = {
       accounts: [POLYGON_PRIVATE_KEY_MAINNET]
     },
     ethereumRinkeby: {
-      url: "https://eth-rinkeby.alchemyapi.io/v2/GdJgwquJRioF66LS4Km5fGmBxRbTHWp2",
+      url: RINKEBY_GATEWAY_URL,
       accounts: [ETHEREUM_PRIVATE_KEY_RINKEBY]
     }
   },
