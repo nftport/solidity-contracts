@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity 0.8.9;
 
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
@@ -17,7 +17,6 @@ contract NftInjectableTokenIdRolesUpdatableBaseURI is ERC721URIStorage, AccessCo
     event PermanentURIGlobal();
 
     constructor(string memory _name, string memory _symbol, address owner, bool _isFreezeTokenUris, string memory _initBaseURI) ERC721(_name, _symbol) {
-        require(bytes(_initBaseURI).length > 0 , "NFT: Base URI cannot be empty");
         _setupRole(DEFAULT_ADMIN_ROLE, owner);
         _setupRole(MINTER_ROLE, owner);
         _setupRole(MINTER_ROLE, msg.sender);

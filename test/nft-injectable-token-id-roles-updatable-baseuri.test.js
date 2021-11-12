@@ -28,12 +28,6 @@ describe("NftInjectableTokenIdRolesUpdatableBaseURI", function () {
     expect(await nft.isFreezeTokenUris()).to.equal(true);
   });
 
-  it("It should not deploy the contract with empty default baseURL", async () => {
-    const [owner] = await ethers.getSigners();
-    const NFT = await ethers.getContractFactory("NftInjectableTokenIdRolesUpdatableBaseURI");
-    await expect(NFT.deploy("NFTPort", "NFT", owner.address, true, "")).to.be.reverted;
-  });
-
   it("It should deploy the contract, tokens uri's are initially frozen, mint token, trying to update URI should lead to error, freeze individual token should revert", async () => {
     const nft = await deploy();
     const URI = "default";
