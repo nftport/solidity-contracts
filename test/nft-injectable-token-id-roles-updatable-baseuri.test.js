@@ -46,7 +46,7 @@ describe("NftInjectableTokenIdRolesUpdatableBaseURI", function () {
 
   it("It should deploy the contract, updating w/empty baseURL should revert", async () => {
     const nft = await deploy();
-    await expect(nft.updateBaseUri('')).to.be.reverted;
+    await expect(nft.update('', false)).to.be.reverted;
   });
 
   it("It should deploy the contract, tokens uri's are initially frozen, mint token, update baseURI, check new token URI", async () => {
@@ -55,7 +55,7 @@ describe("NftInjectableTokenIdRolesUpdatableBaseURI", function () {
     const URIUpdated = "updated";
     await nft.mintToCaller(caller, 1, URI);
     expect(await nft.tokenURI(1)).to.equal(baseURI + URI);
-    await nft.updateBaseUri(baseURIUpdated);
+    await nft.update(baseURIUpdated, false);
     expect(await nft.tokenURI(1)).to.equal(baseURIUpdated + URI);
   });
 
@@ -82,9 +82,10 @@ describe("NftInjectableTokenIdRolesUpdatableBaseURI", function () {
     expect(await nft.tokenURI(1)).to.equal(baseURI + URI);
     await nft.updateTokenUri(1, URIUpdated, false);
     expect(await nft.tokenURI(1)).to.equal(baseURI + URIUpdated);
-    await nft.freezeAllTokenUris();
+    await nft.update('', true);
     await expect(nft.updateTokenUri(1, URIUpdated2, false)).to.be.reverted;
     await expect(nft.freezeAllTokenUris()).to.be.reverted;
+    await expect(nft.update('', true)).to.be.reverted;
   });
 
   it("It should deploy the contract, tokens uri's are initially updatable, trying to update/freeze non-existing token should lead to error", async () => {

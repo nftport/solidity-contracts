@@ -48,13 +48,6 @@ contract NftInjectableTokenIdRolesUpdatableBaseURI is ERC721URIStorage, AccessCo
         return _owner;
     }
 
-    function updateBaseUri(string memory _newBaseURI)
-    public
-    onlyRole(MINTER_ROLE) {
-        require(bytes(_newBaseURI).length > 0 , "NFT: Base URI cannot be empty");
-        baseURI = _newBaseURI;
-    }
-
     function _baseURI() 
     internal
     view 
@@ -80,6 +73,18 @@ contract NftInjectableTokenIdRolesUpdatableBaseURI is ERC721URIStorage, AccessCo
         if (_isFreezeTokenUri) {
             freezeTokenUris[_tokenId] = true;
             emit PermanentURI(tokenURI(_tokenId), _tokenId);
+        }
+    }
+
+    function update(string memory _newBaseURI, bool _freezeAllTokenUris)
+    public
+    onlyRole(MINTER_ROLE) {
+        require (bytes(_newBaseURI).length > 0 || _freezeAllTokenUris == true, "NFT: _newBaseURI or _freezeAllTokenUris is requred");
+        if (bytes(_newBaseURI).length > 0) {
+            baseURI = _newBaseURI;
+        }
+        if (_freezeAllTokenUris) {
+            freezeAllTokenUris();
         }
     }
 
