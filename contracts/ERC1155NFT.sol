@@ -6,27 +6,16 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract ERC1155NFT is ERC1155, Ownable {
 
-
-    // Mapping for id to amount in that token id
     mapping(uint256 => uint256) private balances;
 
-    // Mapping for index to owners
     mapping(uint256 => address[]) private owners;
 
-    // Constructor call Params :  Metadata uri, Token id, Amount of token, data
-    constructor(string memory _uri) ERC1155(_uri)
-    {
-        // _mint(msg.sender, id, amount, data);
-        // balances[0] = amount;
-        // owners[0] = [msg.sender];
-    }
+    constructor(string memory _uri) ERC1155(_uri) {}
 
-    // Set metadata uri
     function setURI(string memory newuri) public onlyOwner {
         _setURI(newuri);
     }
 
-    // Mint new tokens Params : Mint token account, token id, amount of token, data
     function mint(
         address account,
         uint256 id,
@@ -43,7 +32,6 @@ contract ERC1155NFT is ERC1155, Ownable {
         owners[id].push(account);
     }
 
-    // Batch mint token Params : Mint token account, token ids array, token amounts array, data
     function mintBatch(
         address to,
         uint256[] memory ids,
@@ -62,12 +50,10 @@ contract ERC1155NFT is ERC1155, Ownable {
         }
     }
 
-    // Total Balance of token index
     function tokenBalance(uint256 index) public view returns (uint256) {
         return balances[index];
     }
 
-    // Get owners list for given token ids
     function ownersCorrespondingToToken(uint256 index)
         public
         view
