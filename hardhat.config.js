@@ -30,6 +30,9 @@ task("accounts", "Prints the list of accounts", async () => {
 module.exports = {
   defaultNetwork: "matic",
   networks: {
+    localhost: {
+     url: "http://127.0.0.1:8546"
+    },
     hardhat: {
     },
     matic: {
@@ -70,4 +73,3 @@ module.exports = {
     spacing: 2
   }
 }
-
