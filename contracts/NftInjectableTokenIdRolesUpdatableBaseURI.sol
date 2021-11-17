@@ -78,6 +78,7 @@ contract NftInjectableTokenIdRolesUpdatableBaseURI is ERC721URIStorage, AccessCo
     function update(string memory _newBaseURI, bool _freezeAllTokenUris)
     public
     onlyRole(MINTER_ROLE) {
+        require(isFreezeTokenUris == false, "NFT: Token uris are already frozen");
         baseURI = _newBaseURI;
         if (_freezeAllTokenUris) {
             freezeAllTokenUris();

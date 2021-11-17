@@ -38,8 +38,17 @@ describe("NftInjectableTokenIdRolesUpdatableBaseURI", function () {
     await expect(nft.updateTokenUri(1, '', true)).to.be.reverted;
   });
 
-  it("It should deploy the contract, tokens uri's are initially frozen, mint token, update baseURI, check new token URI, empty baseURI is ok too", async () => {
+  it("It should deploy the contract, tokens uri's are initially frozen, mint token, update baseURI should fail", async () => {
     const nft = await deploy();
+    const URI = "default";
+    await nft.mintToCaller(caller, 1, URI);
+    expect(await nft.tokenURI(1)).to.equal(baseURI + URI);    
+    await expect(nft.update(baseURIUpdated, false)).to.be.reverted;
+  });
+
+
+  it("It should deploy the contract, tokens uri's are initially frozen, mint token, update baseURI, check new token URI, empty baseURI is ok too", async () => {
+    const nft = await deploy(false);
     const URI = "default";
     const URIUpdated = "updated";
     await nft.mintToCaller(caller, 1, URI);
