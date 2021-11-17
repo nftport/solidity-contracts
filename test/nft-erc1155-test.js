@@ -25,16 +25,6 @@ describe("ERC1155NFT", function() {
     await expect(balancetoken1[0].toNumber()).to.equal(100);
   });
 
-  it("It should deploy the contract, Batch Mint tokens & Check Owner of tokens", async () => {
-    const [deployer] = await ethers.getSigners();
-    const NFT = await ethers.getContractFactory("ERC1155NFT");
-    const nft = await NFT.deploy("https://gateway.pinata.cloud/ipfs/QmeaLZ5Gubd7CSgETvESGuYQWfHmBV4RC28Pu1Veyw4iSg","Yoo Token", "YT");
-    await nft.deployed();
-    const mint = await nft.functions.mint(deployer.address, 0, 110, "0x00","https://gateway.pinata.cloud/ipfs/QmeaLZ5Gubd7CSgETvESGuYQWfHmBV4RC28Pu1Veyw4iSg");
-    const token1Owners = await nft.functions.ownersCorrespondingToToken(0);
-    await expect(deployer.address).to.equal(token1Owners[0][0]);
-  });
-
   it("It should deploy the contract, Mint tokens & Check token balance", async () => {
     const [deployer] = await ethers.getSigners();
     const NFT = await ethers.getContractFactory("ERC1155NFT");

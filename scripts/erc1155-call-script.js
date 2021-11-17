@@ -44,11 +44,6 @@ async function example_interactions() {
   const token2tokenSupply = await token.functions.tokenSupply(1);
   console.log(`Token1 tokenSupply: ${token1tokenSupply[0].toNumber()}`);
   console.log(`Token2 tokenSupply: ${token2tokenSupply[0].toNumber()}`);
-
-  const token1Owners = await token.functions.ownersCorrespondingToToken(0);
-  const token2Owners = await token.functions.ownersCorrespondingToToken(1);
-  console.log(token1Owners);
-  console.log(token2Owners);
 }
 
 example_interactions()
