@@ -31,8 +31,7 @@ module.exports = {
   defaultNetwork: "matic",
   networks: {
     localhost: {
-     url: "http://127.0.0.1:8546",
-     accounts: ['4b4e4f90258b7c622fefd3c8981388f03e5aa2dcb08deeecae12b0c415d4859b']
+     url: "http://127.0.0.1:8546"
     },
     hardhat: {
     },
