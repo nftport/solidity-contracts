@@ -12,7 +12,8 @@ const deploy = async() => {
 describe("ERC1155NFT Roles", function() {
   it("It should deploy the contract, validate contract owner", async () => {
     const nft = await deploy();
-    await expect(await nft.owner()).to.equal("0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC");
+    const [deployer, address1, contractOwner, address2] = await ethers.getSigners();
+    await expect(await nft.owner()).to.equal(contractOwner.address);
   });
   it("It should deploy the contract, mint token for deployer & Owner, should lead to error while minting tokens from not access control accounts: address1,address2", async () => {
     const nft = await deploy();
