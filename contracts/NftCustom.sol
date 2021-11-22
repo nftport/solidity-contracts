@@ -3,6 +3,7 @@ pragma solidity 0.8.9;
 
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
+import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
 
 contract NftCustom is ERC721URIStorage, AccessControl {
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
@@ -11,7 +12,7 @@ contract NftCustom is ERC721URIStorage, AccessControl {
     bool public isFreezeTokenUris;
     mapping (uint256 => bool) public freezeTokenUris;
 
-    string private baseURI;
+    string public baseURI;
 
     event PermanentURI(string _value, uint256 indexed _id); // https://docs.opensea.io/docs/metadata-standards
     event PermanentURIGlobal();
@@ -73,6 +74,13 @@ contract NftCustom is ERC721URIStorage, AccessControl {
             freezeTokenUris[_tokenId] = true;
             emit PermanentURI(tokenURI(_tokenId), _tokenId);
         }
+    }
+
+    function burn(uint256 _tokenId)
+    public
+    onlyRole(MINTER_ROLE) {
+        require(_exists(_tokenId), "Burn for nonexistent token");
+        _burn(_tokenId);
     }
 
     function update(string memory _newBaseURI, bool _freezeAllTokenUris)

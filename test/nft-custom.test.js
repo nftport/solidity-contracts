@@ -34,6 +34,7 @@ describe("NftCustom", function () {
     const URIUpdated = "updated";
     await nft.mintToCaller(caller, 1, URI);
     expect(await nft.tokenURI(1)).to.equal(baseURI + URI);
+    expect(await nft.baseURI()).to.equal(baseURI);
     await expect(nft.updateTokenUri(1, URIUpdated, false)).to.be.reverted;
     await expect(nft.updateTokenUri(1, '', true)).to.be.reverted;
   });
@@ -54,6 +55,7 @@ describe("NftCustom", function () {
     await nft.mintToCaller(caller, 1, URI);
     expect(await nft.tokenURI(1)).to.equal(baseURI + URI);
     await nft.update(baseURIUpdated, false);
+    expect(await nft.baseURI()).to.equal(baseURIUpdated);
     expect(await nft.tokenURI(1)).to.equal(baseURIUpdated + URI);
     await nft.update('', false);
     expect(await nft.tokenURI(1)).to.equal(URI);
@@ -92,6 +94,17 @@ describe("NftCustom", function () {
     const nft = await deploy(false);
     const URI = "default";
     await expect(nft.updateTokenUri(1, URI, true)).to.be.reverted;
+  });
+
+
+  it("It should deploy the contract, mint token, burn it, then trying to update/freeze non-existing token should lead to error, burn is possible once", async () => {
+    const nft = await deploy(true);
+    const URI = "default";
+    await nft.mintToCaller(caller, 1, URI);
+    expect(await nft.tokenURI(1)).to.equal(baseURI + URI);
+    await nft.burn(1);
+    await expect(nft.updateTokenUri(1, URI, true)).to.be.reverted;
+    await expect(nft.burn(1)).to.be.reverted;
   });
 
 });
