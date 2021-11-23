@@ -12,8 +12,19 @@ contract NftCustom is ERC721URIStorage, AccessControl {
     bool public isFreezeTokenUris;
     mapping (uint256 => bool) public freezeTokenUris;
 
+    // Mapping from owner to list of owned token IDs
+    mapping(address => mapping(uint256 => uint256)) private _ownedTokens;
+
+    // Mapping from token ID to index of the owner tokens list
+    mapping(uint256 => uint256) private _ownedTokensIndex;
+
+    // Array with all token ids, used for enumeration
+    uint256[] private _allTokens;
+
+    // Mapping from token id to position in the allTokens array
+    mapping(uint256 => uint256) private _allTokensIndex;
+
     string public baseURI;
-    int256 public totalSupply;
 
     event PermanentURI(string _value, uint256 indexed _id); // https://docs.opensea.io/docs/metadata-standards
     event PermanentURIGlobal();
@@ -25,7 +36,6 @@ contract NftCustom is ERC721URIStorage, AccessControl {
         isFreezeTokenUris = _isFreezeTokenUris;
         baseURI = _initBaseURI;
         _owner = owner;
-        totalSupply = 0;    
     }
 
     function mintToCaller(address caller, uint256 tokenId, string memory tokenURI)
@@ -34,7 +44,8 @@ contract NftCustom is ERC721URIStorage, AccessControl {
     {
         _safeMint(caller, tokenId);
         _setTokenURI(tokenId, tokenURI);
-        totalSupply++;
+        // _allTokensIndex[tokenId] = _allTokens.length;
+        // _allTokens.push(tokenId);
         return tokenId;
     }
 
@@ -84,7 +95,8 @@ contract NftCustom is ERC721URIStorage, AccessControl {
     onlyRole(MINTER_ROLE) {
         require(_exists(_tokenId), "Burn for nonexistent token");
         _burn(_tokenId);
-        totalSupply--;
+        // TODO
+//        _removeTokenFromAllTokensEnumeration(_tokenId);
     }
 
     function update(string memory _newBaseURI, bool _freezeAllTokenUris)
@@ -106,13 +118,87 @@ contract NftCustom is ERC721URIStorage, AccessControl {
         emit PermanentURIGlobal();
     }
 
+    function totalSupply() public view virtual returns (uint256) {
+        return _allTokens.length;
+    }
+
     function tokenOfOwnerByIndex(address owner, uint256 index) public view virtual returns (uint256) {
-        // require(index < ERC721.balanceOf(owner), "ERC721Enumerable: owner index out of bounds");
-        // return _ownedTokens[owner][index];
+        require(index < balanceOf(owner), "ERC721: owner index out of bounds");
+        return _ownedTokens[owner][index];
     }
 
     function tokenByIndex(uint256 index) public view virtual returns (uint256) {
-        // require(index < ERC721Enumerable.totalSupply(), "ERC721Enumerable: global index out of bounds");
-        // return _allTokens[index];
+        require(index < totalSupply(), "ERC721: global index out of bounds");
+        return _allTokens[index];
+    }
+
+    function _beforeTokenTransfer(
+        address from,
+        address to,
+        uint256 tokenId
+    ) internal virtual override {
+        super._beforeTokenTransfer(from, to, tokenId);
+
+        if (from == address(0)) {
+            _addTokenToAllTokensEnumeration(tokenId);
+        } else if (from != to) {
+            _removeTokenFromOwnerEnumeration(from, tokenId);
+        }
+        if (to == address(0)) {
+            _removeTokenFromAllTokensEnumeration(tokenId);
+        } else if (to != from) {
+            _addTokenToOwnerEnumeration(to, tokenId);
+        }
+    }
+
+    function _addTokenToOwnerEnumeration(address to, uint256 tokenId) private {
+        uint256 length = ERC721.balanceOf(to);
+        _ownedTokens[to][length] = tokenId;
+        _ownedTokensIndex[tokenId] = length;
+    }
+
+    function _addTokenToAllTokensEnumeration(uint256 tokenId) private {
+        _allTokensIndex[tokenId] = _allTokens.length;
+        _allTokens.push(tokenId);
+    }
+
+    function _removeTokenFromOwnerEnumeration(address from, uint256 tokenId) private {
+        // To prevent a gap in from's tokens array, we store the last token in the index of the token to delete, and
+        // then delete the last slot (swap and pop).
+
+        uint256 lastTokenIndex = ERC721.balanceOf(from) - 1;
+        uint256 tokenIndex = _ownedTokensIndex[tokenId];
+
+        // When the token to delete is the last token, the swap operation is unnecessary
+        if (tokenIndex != lastTokenIndex) {
+            uint256 lastTokenId = _ownedTokens[from][lastTokenIndex];
+
+            _ownedTokens[from][tokenIndex] = lastTokenId; // Move the last token to the slot of the to-delete token
+            _ownedTokensIndex[lastTokenId] = tokenIndex; // Update the moved token's index
+        }
+
+        // This also deletes the contents at the last position of the array
+        delete _ownedTokensIndex[tokenId];
+        delete _ownedTokens[from][lastTokenIndex];
+    }
+
+    function _removeTokenFromAllTokensEnumeration(uint256 tokenId) private {
+        // To prevent a gap in the tokens array, we store the last token in the index of the token to delete, and
+        // then delete the last slot (swap and pop).
+
+        uint256 lastTokenIndex = _allTokens.length - 1;
+        uint256 tokenIndex = _allTokensIndex[tokenId];
+
+        // When the token to delete is the last token, the swap operation is unnecessary. However, since this occurs so
+        // rarely (when the last minted token is burnt) that we still do the swap here to avoid the gas cost of adding
+        // an 'if' statement (like in _removeTokenFromOwnerEnumeration)
+        uint256 lastTokenId = _allTokens[lastTokenIndex];
+
+        _allTokens[tokenIndex] = lastTokenId; // Move the last token to the slot of the to-delete token
+        _allTokensIndex[lastTokenId] = tokenIndex; // Update the moved token's index
+
+        // This also deletes the contents at the last position of the array
+        delete _allTokensIndex[tokenId];
+        _allTokens.pop();
     }
 }
