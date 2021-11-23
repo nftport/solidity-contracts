@@ -107,4 +107,14 @@ describe("NftCustom", function () {
     await expect(nft.burn(1)).to.be.reverted;
   });
 
+  it("It should deploy the contract, mint token, burn it, check totalSupply on all stages", async () => {
+    const nft = await deploy(true);
+    const URI = "default";
+    expect(await nft.totalSupply()).to.equal(0);
+    await nft.mintToCaller(caller, 1, URI);
+    expect(await nft.totalSupply()).to.equal(1);
+    await nft.burn(1);
+    expect(await nft.totalSupply()).to.equal(0);
+  });
+
 });

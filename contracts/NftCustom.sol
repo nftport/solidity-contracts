@@ -13,6 +13,7 @@ contract NftCustom is ERC721URIStorage, AccessControl {
     mapping (uint256 => bool) public freezeTokenUris;
 
     string public baseURI;
+    int256 public totalSupply;
 
     event PermanentURI(string _value, uint256 indexed _id); // https://docs.opensea.io/docs/metadata-standards
     event PermanentURIGlobal();
@@ -24,6 +25,7 @@ contract NftCustom is ERC721URIStorage, AccessControl {
         isFreezeTokenUris = _isFreezeTokenUris;
         baseURI = _initBaseURI;
         _owner = owner;
+        totalSupply = 0;    
     }
 
     function mintToCaller(address caller, uint256 tokenId, string memory tokenURI)
@@ -32,6 +34,7 @@ contract NftCustom is ERC721URIStorage, AccessControl {
     {
         _safeMint(caller, tokenId);
         _setTokenURI(tokenId, tokenURI);
+        totalSupply++;
         return tokenId;
     }
 
@@ -81,6 +84,7 @@ contract NftCustom is ERC721URIStorage, AccessControl {
     onlyRole(MINTER_ROLE) {
         require(_exists(_tokenId), "Burn for nonexistent token");
         _burn(_tokenId);
+        totalSupply--;
     }
 
     function update(string memory _newBaseURI, bool _freezeAllTokenUris)
@@ -100,5 +104,15 @@ contract NftCustom is ERC721URIStorage, AccessControl {
         isFreezeTokenUris = true;
 
         emit PermanentURIGlobal();
+    }
+
+    function tokenOfOwnerByIndex(address owner, uint256 index) public view virtual returns (uint256) {
+        // require(index < ERC721.balanceOf(owner), "ERC721Enumerable: owner index out of bounds");
+        // return _ownedTokens[owner][index];
+    }
+
+    function tokenByIndex(uint256 index) public view virtual returns (uint256) {
+        // require(index < ERC721Enumerable.totalSupply(), "ERC721Enumerable: global index out of bounds");
+        // return _allTokens[index];
     }
 }
