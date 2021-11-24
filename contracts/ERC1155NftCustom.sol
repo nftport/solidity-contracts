@@ -6,7 +6,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 
-contract ERC1155NFTRoles is ERC1155, AccessControl {
+contract ERC1155NFTCustom is ERC1155, AccessControl {
 
     using SafeMath for uint256;
 

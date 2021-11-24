@@ -3,13 +3,13 @@ const METADATA_URI = "https://gateway.pinata.cloud/ipfs/QmeaLZ5Gubd7CSgETvESGuYQ
 
 const deploy = async() => {
   const [deployer, address1, contractOwner, address2] = await ethers.getSigners();
-  const NFT = await ethers.getContractFactory("ERC1155NFTRoles");
+  const NFT = await ethers.getContractFactory("ERC1155NFTCustom");
   const nft = await NFT.deploy(METADATA_URI,"Yoo Token", "YT",contractOwner.address);
   await nft.deployed();
   return nft;
 }
 
-describe("ERC1155NFT Roles", function() {
+describe("ERC1155NFTCustom", function() {
   it("It should deploy the contract, validate contract owner", async () => {
     const nft = await deploy();
     const [deployer, address1, contractOwner, address2] = await ethers.getSigners();

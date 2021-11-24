@@ -6,14 +6,14 @@ const baseURIUpdated = "https://someipfs.com/mockhash/";
 
 const deploy = async(isFreezeTokenUris = true, overrideBaseURI = null) => {
   const [owner] = await ethers.getSigners();
-  const NFT = await ethers.getContractFactory("NftCustom");
+  const NFT = await ethers.getContractFactory("ERC721NFTCustom");
 
   const nft = await NFT.deploy("NFTPort", "NFT", owner.address, isFreezeTokenUris, overrideBaseURI !== null ? overrideBaseURI : baseURI);
   await nft.deployed();
   return nft;
 }
 
-describe("NftCustom", function () {
+describe("ERC721NFTCustom", function () {
   it("It should deploy the contract, mint a token, and resolve to the right URI", async () => {
     const nft = await deploy();
     const URI = "QmWJBNeQAm9Rh4YaW8GFRnSgwa4dN889VKm9poc2DQPBkv";
