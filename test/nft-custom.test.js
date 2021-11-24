@@ -117,4 +117,18 @@ describe("NftCustom", function () {
     expect(await nft.totalSupply()).to.equal(0);
   });
 
+  it("It should deploy the contract, mint token, then check tokenOfOwnerByIndex / tokenByIndex", async () => {
+    const nft = await deploy(true);
+    const URI = "default";
+    expect(await nft.totalSupply()).to.equal(0);
+    await nft.mintToCaller(caller, 12345, URI);
+    expect(await nft.tokenOfOwnerByIndex(caller, 0)).to.equal(12345);
+    expect(await nft.tokenByIndex(0)).to.equal(12345);
+    await expect(nft.tokenOfOwnerByIndex(caller, 1)).to.be.reverted;
+    await expect(nft.tokenByIndex(1)).to.be.reverted;
+    await nft.burn(12345);
+    await expect(nft.tokenOfOwnerByIndex(caller, 0)).to.be.reverted;
+    await expect(nft.tokenByIndex(0)).to.be.reverted;
+  });
+
 });

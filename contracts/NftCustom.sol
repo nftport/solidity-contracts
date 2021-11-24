@@ -44,8 +44,6 @@ contract NftCustom is ERC721URIStorage, AccessControl {
     {
         _safeMint(caller, tokenId);
         _setTokenURI(tokenId, tokenURI);
-        // _allTokensIndex[tokenId] = _allTokens.length;
-        // _allTokens.push(tokenId);
         return tokenId;
     }
 
@@ -95,8 +93,6 @@ contract NftCustom is ERC721URIStorage, AccessControl {
     onlyRole(MINTER_ROLE) {
         require(_exists(_tokenId), "Burn for nonexistent token");
         _burn(_tokenId);
-        // TODO
-//        _removeTokenFromAllTokensEnumeration(_tokenId);
     }
 
     function update(string memory _newBaseURI, bool _freezeAllTokenUris)
@@ -162,6 +158,11 @@ contract NftCustom is ERC721URIStorage, AccessControl {
         _allTokens.push(tokenId);
     }
 
+    /**
+     * Note that
+     * while the token is not assigned a new owner, the `_ownedTokensIndex` mapping is _not_ updated: this allows for
+     * gas optimizations e.g. when performing a transfer operation (avoiding double writes).
+     */
     function _removeTokenFromOwnerEnumeration(address from, uint256 tokenId) private {
         // To prevent a gap in from's tokens array, we store the last token in the index of the token to delete, and
         // then delete the last slot (swap and pop).
