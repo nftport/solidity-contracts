@@ -1,0 +1,205 @@
+// SPDX-License-Identifier: MIT
+pragma solidity 0.8.9;
+
+import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
+import "@openzeppelin/contracts/access/AccessControl.sol";
+import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
+
+contract NftCustom is ERC721URIStorage, AccessControl {
+    bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
+    address private _owner;
+
+    bool public isFreezeTokenUris;
+    mapping (uint256 => bool) public freezeTokenUris;
+
+    // Mapping from owner to list of owned token IDs
+    mapping(address => mapping(uint256 => uint256)) private _ownedTokens;
+
+    // Mapping from token ID to index of the owner tokens list
+    mapping(uint256 => uint256) private _ownedTokensIndex;
+
+    // Array with all token ids, used for enumeration
+    uint256[] private _allTokens;
+
+    // Mapping from token id to position in the allTokens array
+    mapping(uint256 => uint256) private _allTokensIndex;
+
+    string public baseURI;
+
+    event PermanentURI(string _value, uint256 indexed _id); // https://docs.opensea.io/docs/metadata-standards
+    event PermanentURIGlobal();
+
+    constructor(string memory _name, string memory _symbol, address owner, bool _isFreezeTokenUris, string memory _initBaseURI) ERC721(_name, _symbol) {
+        _setupRole(DEFAULT_ADMIN_ROLE, owner);
+        _setupRole(MINTER_ROLE, owner);
+        _setupRole(MINTER_ROLE, msg.sender);
+        isFreezeTokenUris = _isFreezeTokenUris;
+        baseURI = _initBaseURI;
+        _owner = owner;
+    }
+
+    function mintToCaller(address caller, uint256 tokenId, string memory tokenURI)
+    public onlyRole(MINTER_ROLE)
+    returns (uint256)
+    {
+        _safeMint(caller, tokenId);
+        _setTokenURI(tokenId, tokenURI);
+        return tokenId;
+    }
+
+    function supportsInterface(bytes4 interfaceId)
+    public
+    view
+    override(ERC721, AccessControl)
+    returns (bool)
+    {
+        return ERC721.supportsInterface(interfaceId);
+    }
+
+    function owner() public view returns (address) {
+        return _owner;
+    }
+
+    function _baseURI() 
+    internal
+    view 
+    virtual 
+    override(ERC721)
+    returns (string memory) {
+        return baseURI;
+    }
+
+
+    function updateTokenUri(uint256 _tokenId, string memory _tokenUri, bool _isFreezeTokenUri)
+    public
+    onlyRole(MINTER_ROLE) {
+        require(_exists(_tokenId), "NFT: update URI query for nonexistent token");
+        require(isFreezeTokenUris == false, "NFT: Token uris are frozen globally");
+        require(freezeTokenUris[_tokenId] != true, "NFT: Token is frozen");
+        require(_isFreezeTokenUri || (bytes(_tokenUri).length != 0), "NFT: Either _tokenUri or _isFreezeTokenUri=true required");
+
+        if (bytes(_tokenUri).length != 0) {
+            require(keccak256(bytes(tokenURI(_tokenId))) != keccak256(bytes(string(abi.encodePacked(_baseURI(), _tokenUri)))), "NFT: New token URI is same as updated");
+            _setTokenURI(_tokenId, _tokenUri);
+        }
+        if (_isFreezeTokenUri) {
+            freezeTokenUris[_tokenId] = true;
+            emit PermanentURI(tokenURI(_tokenId), _tokenId);
+        }
+    }
+
+    function burn(uint256 _tokenId)
+    public
+    onlyRole(MINTER_ROLE) {
+        require(_exists(_tokenId), "Burn for nonexistent token");
+        _burn(_tokenId);
+    }
+
+    function update(string memory _newBaseURI, bool _freezeAllTokenUris)
+    public
+    onlyRole(MINTER_ROLE) {
+        require(isFreezeTokenUris == false, "NFT: Token uris are already frozen");
+        baseURI = _newBaseURI;
+        if (_freezeAllTokenUris) {
+            freezeAllTokenUris();
+        }
+    }
+
+    function freezeAllTokenUris()
+    public
+    onlyRole(MINTER_ROLE) {
+        require(isFreezeTokenUris == false, "NFT: Token uris are already frozen");
+        isFreezeTokenUris = true;
+
+        emit PermanentURIGlobal();
+    }
+
+    function totalSupply() public view virtual returns (uint256) {
+        return _allTokens.length;
+    }
+
+    function tokenOfOwnerByIndex(address owner, uint256 index) public view virtual returns (uint256) {
+        require(index < balanceOf(owner), "ERC721: owner index out of bounds");
+        return _ownedTokens[owner][index];
+    }
+
+    function tokenByIndex(uint256 index) public view virtual returns (uint256) {
+        require(index < totalSupply(), "ERC721: global index out of bounds");
+        return _allTokens[index];
+    }
+
+    function _beforeTokenTransfer(
+        address from,
+        address to,
+        uint256 tokenId
+    ) internal virtual override {
+        super._beforeTokenTransfer(from, to, tokenId);
+
+        if (from == address(0)) {
+            _addTokenToAllTokensEnumeration(tokenId);
+        } else if (from != to) {
+            _removeTokenFromOwnerEnumeration(from, tokenId);
+        }
+        if (to == address(0)) {
+            _removeTokenFromAllTokensEnumeration(tokenId);
+        } else if (to != from) {
+            _addTokenToOwnerEnumeration(to, tokenId);
+        }
+    }
+
+    function _addTokenToOwnerEnumeration(address to, uint256 tokenId) private {
+        uint256 length = ERC721.balanceOf(to);
+        _ownedTokens[to][length] = tokenId;
+        _ownedTokensIndex[tokenId] = length;
+    }
+
+    function _addTokenToAllTokensEnumeration(uint256 tokenId) private {
+        _allTokensIndex[tokenId] = _allTokens.length;
+        _allTokens.push(tokenId);
+    }
+
+    /**
+     * Note that
+     * while the token is not assigned a new owner, the `_ownedTokensIndex` mapping is _not_ updated: this allows for
+     * gas optimizations e.g. when performing a transfer operation (avoiding double writes).
+     */
+    function _removeTokenFromOwnerEnumeration(address from, uint256 tokenId) private {
+        // To prevent a gap in from's tokens array, we store the last token in the index of the token to delete, and
+        // then delete the last slot (swap and pop).
+
+        uint256 lastTokenIndex = ERC721.balanceOf(from) - 1;
+        uint256 tokenIndex = _ownedTokensIndex[tokenId];
+
+        // When the token to delete is the last token, the swap operation is unnecessary
+        if (tokenIndex != lastTokenIndex) {
+            uint256 lastTokenId = _ownedTokens[from][lastTokenIndex];
+
+            _ownedTokens[from][tokenIndex] = lastTokenId; // Move the last token to the slot of the to-delete token
+            _ownedTokensIndex[lastTokenId] = tokenIndex; // Update the moved token's index
+        }
+
+        // This also deletes the contents at the last position of the array
+        delete _ownedTokensIndex[tokenId];
+        delete _ownedTokens[from][lastTokenIndex];
+    }
+
+    function _removeTokenFromAllTokensEnumeration(uint256 tokenId) private {
+        // To prevent a gap in the tokens array, we store the last token in the index of the token to delete, and
+        // then delete the last slot (swap and pop).
+
+        uint256 lastTokenIndex = _allTokens.length - 1;
+        uint256 tokenIndex = _allTokensIndex[tokenId];
+
+        // When the token to delete is the last token, the swap operation is unnecessary. However, since this occurs so
+        // rarely (when the last minted token is burnt) that we still do the swap here to avoid the gas cost of adding
+        // an 'if' statement (like in _removeTokenFromOwnerEnumeration)
+        uint256 lastTokenId = _allTokens[lastTokenIndex];
+
+        _allTokens[tokenIndex] = lastTokenId; // Move the last token to the slot of the to-delete token
+        _allTokensIndex[lastTokenId] = tokenIndex; // Update the moved token's index
+
+        // This also deletes the contents at the last position of the array
+        delete _allTokensIndex[tokenId];
+        _allTokens.pop();
+    }
+}
