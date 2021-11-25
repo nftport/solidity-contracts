@@ -8,8 +8,6 @@ import "@openzeppelin/contracts/access/AccessControl.sol";
 
 contract ERC1155NFTCustom is ERC1155, AccessControl {
 
-    using SafeMath for uint256;
-
     string public name;
     string public symbol;
 
