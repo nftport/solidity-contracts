@@ -1,9 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.9;
 
-import "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/utils/math/SafeMath.sol";
+import "@openzeppelin/contracts/token/ERC1155/extensions/ERC1155Burnable.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 
 contract ERC1155NFTCustom is ERC1155Burnable, AccessControl {
@@ -12,6 +10,8 @@ contract ERC1155NFTCustom is ERC1155Burnable, AccessControl {
 
     bool public isFreezeTokenUris;
     mapping (uint256 => bool) public freezeTokenUris;
+
+    string public baseURI;
 
     string public name;
     string public symbol;
@@ -45,9 +45,9 @@ contract ERC1155NFTCustom is ERC1155Burnable, AccessControl {
         require(_isFreezeTokenUri || (bytes(_newUri).length != 0), "NFT: Either _newUri or _isFreezeTokenUri=true required");
 
         if (bytes(_newUri).length != 0) {
-            require(keccak256(bytes(_tokenURIs[_tokenId])) != keccak256(bytes(string(abi.encodePacked(_baseURI(), _newUri)))), "NFT: New token URI is same as updated");
+            require(keccak256(bytes(_tokenURIs[_tokenId])) != keccak256(bytes(string(abi.encodePacked(baseURI, _newUri)))), "NFT: New token URI is same as updated");
             _tokenURIs[_tokenId] = _newUri;
-            emit URI(_newURI, _tokenId);
+            emit URI(_newUri, _tokenId);
         }
         if (_isFreezeTokenUri) {
             freezeTokenUris[_tokenId] = true;
@@ -78,13 +78,13 @@ contract ERC1155NFTCustom is ERC1155Burnable, AccessControl {
 
     function mint( address account, uint256 id, uint256 amount, bytes memory data, string memory uri) public onlyRole(MINTER_ROLE)
     returns (uint256) {
-        require(!_exists(tokenId), "ERC721: token already minted");
+        require(!_exists(id), "NFT: token already minted");
         if (bytes(uri).length > 0) {
             _tokenURIs[id] = uri;
             emit URI(uri, id);
         }
         _mint(account, id, amount, data);
-        tokenSupply[id] = tokenSupply[id].add(amount);
+        tokenSupply[id] = tokenSupply[id] + amount;
 
         return id;
     }
@@ -99,7 +99,8 @@ contract ERC1155NFTCustom is ERC1155Burnable, AccessControl {
     }
 
 
-    function _exists(uint256 tokenId) internal view virtual returns (bool) {
+    function _exists(uint256 _tokenId) internal view virtual returns (bool) {
         return tokenSupply[_tokenId] > 0;
     }
+
 }
