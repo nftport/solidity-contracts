@@ -6,7 +6,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 
-contract ERC1155NFTCustom is ERC1155, AccessControl {
+contract ERC1155NFTCustom is ERC1155Burnable, AccessControl {
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
     address private _owner;
 
@@ -45,13 +45,13 @@ contract ERC1155NFTCustom is ERC1155, AccessControl {
         require(_isFreezeTokenUri || (bytes(_newUri).length != 0), "NFT: Either _newUri or _isFreezeTokenUri=true required");
 
         if (bytes(_newUri).length != 0) {
-            require(keccak256(bytes(tokenURI(_tokenId))) != keccak256(bytes(string(abi.encodePacked(_baseURI(), _newUri)))), "NFT: New token URI is same as updated");
-            _tokenUri[_tokenId] = _newUri;
+            require(keccak256(bytes(_tokenURIs[_tokenId])) != keccak256(bytes(string(abi.encodePacked(_baseURI(), _newUri)))), "NFT: New token URI is same as updated");
+            _tokenURIs[_tokenId] = _newUri;
             emit URI(_newURI, _tokenId);
         }
         if (_isFreezeTokenUri) {
             freezeTokenUris[_tokenId] = true;
-            emit PermanentURI(tokenURI(_tokenId), _tokenId);
+            emit PermanentURI(_tokenURIs[_tokenId], _tokenId);
         }
     }
 
@@ -69,8 +69,8 @@ contract ERC1155NFTCustom is ERC1155, AccessControl {
     }
 
     function uri(uint256 _id) public override view returns (string memory) {
-        if (bytes(_tokenURI[_id]).length > 0) {
-            return _tokenURI[_id];
+        if (bytes(_tokenURIs[_id]).length > 0) {
+            return _tokenURIs[_id];
         } else {
             return super.uri(_id);
         }
@@ -78,8 +78,9 @@ contract ERC1155NFTCustom is ERC1155, AccessControl {
 
     function mint( address account, uint256 id, uint256 amount, bytes memory data, string memory uri) public onlyRole(MINTER_ROLE)
     returns (uint256) {
+        require(!_exists(tokenId), "ERC721: token already minted");
         if (bytes(uri).length > 0) {
-            _tokenURI[id] = uri;
+            _tokenURIs[id] = uri;
             emit URI(uri, id);
         }
         _mint(account, id, amount, data);
@@ -97,10 +98,8 @@ contract ERC1155NFTCustom is ERC1155, AccessControl {
         return _owner;
     }
 
-    function burn(address _account, uint256 _tokenId, uint256 _amount)
-    public
-    onlyRole(MINTER_ROLE) {
-        require(_exists(_tokenId), "Burn for nonexistent token");
-        _burn(_account, _tokenId, _amount);
+
+    function _exists(uint256 tokenId) internal view virtual returns (bool) {
+        return tokenSupply[_tokenId] > 0;
     }
 }
