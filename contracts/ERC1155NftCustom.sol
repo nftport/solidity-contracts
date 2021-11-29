@@ -7,32 +7,61 @@ import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 
 contract ERC1155NFTCustom is ERC1155, AccessControl {
+    bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
+    address private _owner;
+
+    bool public isFreezeTokenUris;
+    mapping (uint256 => bool) public freezeTokenUris;
 
     string public name;
     string public symbol;
 
     mapping (uint256 => uint256) public tokenSupply;
-    mapping (uint256 => string) customUri;
+    mapping(uint256 => string) private _tokenURIs;
 
-    bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
-    address private _owner;
+    event PermanentURI(string _value, uint256 indexed _id); // https://docs.opensea.io/docs/metadata-standards
+    event PermanentURIGlobal();
 
-    constructor(string memory _uri, string memory _name, string memory _symbol, address owner) ERC1155(_uri) {
+    constructor(string memory _uri, string memory _name, string memory _symbol, address owner, bool _isFreezeTokenUris) ERC1155(_uri) {
         _setupRole(DEFAULT_ADMIN_ROLE, owner);
         _setupRole(MINTER_ROLE, owner);
         _setupRole(MINTER_ROLE, msg.sender);
+        isFreezeTokenUris = _isFreezeTokenUris;
         _owner = owner;
         name = _name;
         symbol = _symbol;
     }
 
-    function setURI(string memory newuri) public onlyRole(MINTER_ROLE) {
-        _setURI(newuri);
+    function setURI(string memory _newURI) public onlyRole(MINTER_ROLE) {
+        _setURI(_newURI);
     }
 
-    function setCustomURI(uint256 _tokenId, string memory _newURI) public onlyRole(MINTER_ROLE) {
-        customUri[_tokenId] = _newURI;
-        emit URI(_newURI, _tokenId);
+    function updateTokenUri(uint256 _tokenId, string memory _newUri, bool _isFreezeTokenUri)
+    public
+    onlyRole(MINTER_ROLE) {
+        require(_exists(_tokenId), "NFT: update URI query for nonexistent token");
+        require(isFreezeTokenUris == false, "NFT: Token uris are frozen globally");
+        require(freezeTokenUris[_tokenId] != true, "NFT: Token is frozen");
+        require(_isFreezeTokenUri || (bytes(_newUri).length != 0), "NFT: Either _newUri or _isFreezeTokenUri=true required");
+
+        if (bytes(_newUri).length != 0) {
+            require(keccak256(bytes(tokenURI(_tokenId))) != keccak256(bytes(string(abi.encodePacked(_baseURI(), _newUri)))), "NFT: New token URI is same as updated");
+            _tokenUri[_tokenId] = _newUri;
+            emit URI(_newURI, _tokenId);
+        }
+        if (_isFreezeTokenUri) {
+            freezeTokenUris[_tokenId] = true;
+            emit PermanentURI(tokenURI(_tokenId), _tokenId);
+        }
+    }
+
+    function freezeAllTokenUris()
+    public
+    onlyRole(MINTER_ROLE) {
+        require(isFreezeTokenUris == false, "NFT: Token uris are already frozen");
+        isFreezeTokenUris = true;
+
+        emit PermanentURIGlobal();
     }
 
     function totalSupply (uint256 _id) public view returns (uint256) {
@@ -40,10 +69,8 @@ contract ERC1155NFTCustom is ERC1155, AccessControl {
     }
 
     function uri(uint256 _id) public override view returns (string memory) {
-        bytes memory customUriBytes = bytes(customUri[_id]);
-
-        if (customUriBytes.length > 0) {
-            return customUri[_id];
+        if (bytes(_tokenURI[_id]).length > 0) {
+            return _tokenURI[_id];
         } else {
             return super.uri(_id);
         }
@@ -52,7 +79,7 @@ contract ERC1155NFTCustom is ERC1155, AccessControl {
     function mint( address account, uint256 id, uint256 amount, bytes memory data, string memory uri) public onlyRole(MINTER_ROLE)
     returns (uint256) {
         if (bytes(uri).length > 0) {
-            customUri[id] = uri;
+            _tokenURI[id] = uri;
             emit URI(uri, id);
         }
         _mint(account, id, amount, data);
@@ -68,5 +95,12 @@ contract ERC1155NFTCustom is ERC1155, AccessControl {
 
     function owner() public view returns (address) {
         return _owner;
+    }
+
+    function burn(address _account, uint256 _tokenId, uint256 _amount)
+    public
+    onlyRole(MINTER_ROLE) {
+        require(_exists(_tokenId), "Burn for nonexistent token");
+        _burn(_account, _tokenId, _amount);
     }
 }
