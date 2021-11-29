@@ -22,11 +22,12 @@ contract ERC1155NFTCustom is ERC1155Burnable, AccessControl {
     event PermanentURI(string _value, uint256 indexed _id); // https://docs.opensea.io/docs/metadata-standards
     event PermanentURIGlobal();
 
-    constructor(string memory _uri, string memory _name, string memory _symbol, address owner, bool _isFreezeTokenUris) ERC1155(_uri) {
+    constructor(string memory _uri, string memory _name, string memory _symbol, address owner, bool _isFreezeTokenUris, string memory _initBaseURI) ERC1155(_uri) {
         _setupRole(DEFAULT_ADMIN_ROLE, owner);
         _setupRole(MINTER_ROLE, owner);
         _setupRole(MINTER_ROLE, msg.sender);
         isFreezeTokenUris = _isFreezeTokenUris;
+        baseURI = _initBaseURI;
         _owner = owner;
         name = _name;
         symbol = _symbol;
@@ -55,6 +56,17 @@ contract ERC1155NFTCustom is ERC1155Burnable, AccessControl {
         }
     }
 
+
+    function update(string memory _newBaseURI, bool _freezeAllTokenUris)
+    public
+    onlyRole(MINTER_ROLE) {
+        require(isFreezeTokenUris == false, "NFT: Token uris are already frozen");
+        baseURI = _newBaseURI;
+        if (_freezeAllTokenUris) {
+            freezeAllTokenUris();
+        }
+    }
+
     function freezeAllTokenUris()
     public
     onlyRole(MINTER_ROLE) {
@@ -70,7 +82,11 @@ contract ERC1155NFTCustom is ERC1155Burnable, AccessControl {
 
     function uri(uint256 _id) public override view returns (string memory) {
         if (bytes(_tokenURIs[_id]).length > 0) {
-            return _tokenURIs[_id];
+            if (bytes(baseURI).length > 0) {
+                return string(abi.encodePacked(baseURI, _tokenURIs[_id]));
+            } else {
+                return _tokenURIs[_id];
+            }
         } else {
             return super.uri(_id);
         }
