@@ -134,6 +134,8 @@ contract ERC1155NFTCustom is ERC1155, AccessControl {
         uint256[] memory values
     ) public virtual onlyRole(MINTER_ROLE) {
         _burnBatch(account, ids, values);
-        // TODO
+        for (uint256 i = 0; i < ids.length; i++) {
+            tokenSupply[ids[i]] -= values[i];
+        }
     }
 }

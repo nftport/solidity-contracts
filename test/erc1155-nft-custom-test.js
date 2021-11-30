@@ -118,6 +118,18 @@ describe("ERC1155NFTCustom", function () {
     expect(await nft.totalSupply(1)).to.equal(1);
   });
 
+  it("It should deploy the contract, mint token, batchBurn it, check totalSupply on all stages", async () => {
+    const nft = await deploy(true);
+    const URI = "default";
+    expect(await nft.totalSupply(1)).to.equal(0);
+    await nft.mintToCaller(caller, 1, 2, URI);
+    await nft.mintToCaller(caller, 2, 3, URI);
+    expect(await nft.totalSupply(1)).to.equal(2);
+    await nft.burnBatch(caller, [1,2], [1,1]);
+    expect(await nft.totalSupply(1)).to.equal(1);
+    expect(await nft.totalSupply(2)).to.equal(2);
+  });
+
 //   it("It should deploy the contract, mint token, then check tokenOfOwnerByIndex / tokenByIndex", async () => {
 //     const nft = await deploy(true);
 //     const URI = "default";
