@@ -92,17 +92,32 @@ contract ERC1155NFTCustom is ERC1155, AccessControl {
         }
     }
 
-    function mintToCaller( address account, uint256 id, uint256 amount, string memory uri) public onlyRole(MINTER_ROLE)
-    returns (uint256) {
+    function mintToCaller( address account, uint256 id, uint256 amount, string memory uri) public onlyRole(MINTER_ROLE) {
         require(!_exists(id), "NFT: token already minted");
         if (bytes(uri).length > 0) {
             _tokenURIs[id] = uri;
             emit URI(uri, id);
         }
         _mint(account, id, amount, "");
-        tokenSupply[id] = tokenSupply[id] + amount;
+        tokenSupply[id] += amount;
+    }
 
-        return id;
+    function mintToCallerBatch(
+        address to,
+        uint256[] memory ids,
+        uint256[] memory amounts,
+        string[] memory uris
+    ) public onlyRole(MINTER_ROLE)
+    returns (uint256) {
+        for (uint256 i = 0; i < ids.length; i++) {
+            require(!_exists(ids[i]), "NFT: one of tokens are already minted");
+            tokenSupply[ids[i]] += amounts[i];
+            if (bytes(uris[i]).length > 0) {
+                _tokenURIs[ids[i]] = uris[i];
+                emit URI(uris[i], ids[i]);
+            }
+        }
+        _mintBatch(to, ids, amounts, "");
     }
 
     function supportsInterface(bytes4 interfaceId) public view override(ERC1155, AccessControl) returns (bool)
