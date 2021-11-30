@@ -46,7 +46,7 @@ contract ERC1155NFTCustom is ERC1155Burnable, AccessControl {
         require(_isFreezeTokenUri || (bytes(_newUri).length != 0), "NFT: Either _newUri or _isFreezeTokenUri=true required");
 
         if (bytes(_newUri).length != 0) {
-            require(keccak256(bytes(_tokenURIs[_tokenId])) != keccak256(bytes(string(abi.encodePacked(baseURI, _newUri)))), "NFT: New token URI is same as updated");
+            require(keccak256(bytes(_tokenURIs[_tokenId])) != keccak256(bytes(string(abi.encodePacked(_newUri)))), "NFT: New token URI is same as updated");
             _tokenURIs[_tokenId] = _newUri;
             emit URI(_newUri, _tokenId);
         }
@@ -92,14 +92,14 @@ contract ERC1155NFTCustom is ERC1155Burnable, AccessControl {
         }
     }
 
-    function mint( address account, uint256 id, uint256 amount, bytes memory data, string memory uri) public onlyRole(MINTER_ROLE)
+    function mintToCaller( address account, uint256 id, uint256 amount, string memory uri) public onlyRole(MINTER_ROLE)
     returns (uint256) {
         require(!_exists(id), "NFT: token already minted");
         if (bytes(uri).length > 0) {
             _tokenURIs[id] = uri;
             emit URI(uri, id);
         }
-        _mint(account, id, amount, data);
+        _mint(account, id, amount, "");
         tokenSupply[id] = tokenSupply[id] + amount;
 
         return id;

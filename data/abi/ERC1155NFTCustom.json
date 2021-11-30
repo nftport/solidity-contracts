@@ -25,6 +25,11 @@
         "internalType": "bool",
         "name": "_isFreezeTokenUris",
         "type": "bool"
+      },
+      {
+        "internalType": "string",
+        "name": "_initBaseURI",
+        "type": "string"
       }
     ],
     "stateMutability": "nonpayable",
@@ -523,17 +528,12 @@
         "type": "uint256"
       },
       {
-        "internalType": "bytes",
-        "name": "data",
-        "type": "bytes"
-      },
-      {
         "internalType": "string",
         "name": "uri",
         "type": "string"
       }
     ],
-    "name": "mint",
+    "name": "mintToCaller",
     "outputs": [
       {
         "internalType": "uint256",
@@ -771,6 +771,24 @@
       }
     ],
     "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "string",
+        "name": "_newBaseURI",
+        "type": "string"
+      },
+      {
+        "internalType": "bool",
+        "name": "_freezeAllTokenUris",
+        "type": "bool"
+      }
+    ],
+    "name": "update",
+    "outputs": [],
+    "stateMutability": "nonpayable",
     "type": "function"
   },
   {
