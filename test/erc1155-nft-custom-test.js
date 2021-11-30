@@ -103,21 +103,20 @@ describe("ERC1155NFTCustom", function () {
     const URI = "default";
     await nft.mintToCaller(caller, 1, 1, URI);
     expect(await nft.uri(1)).to.equal(baseURI + URI);
-    // TODO: fix
-    // await nft.burn(caller, 1, 1);
-    // await expect(nft.updateTokenUri(1, URI, true)).to.be.reverted;
-    // await expect(nft.burn(caller, 1, 1)).to.be.reverted;
+    await nft.burn(caller, 1, 1);
+    await expect(nft.updateTokenUri(1, URI, true)).to.be.reverted;
+    await expect(nft.burn(caller, 1, 1)).to.be.reverted;
   });
 
-//   it("It should deploy the contract, mint token, burn it, check totalSupply on all stages", async () => {
-//     const nft = await deploy(true);
-//     const URI = "default";
-//     expect(await nft.totalSupply()).to.equal(0);
-//     await nft.mintToCaller(caller, 1, URI);
-//     expect(await nft.totalSupply()).to.equal(1);
-//     await nft.burn(1);
-//     expect(await nft.totalSupply()).to.equal(0);
-//   });
+  it("It should deploy the contract, mint token, burn it, check totalSupply on all stages", async () => {
+    const nft = await deploy(true);
+    const URI = "default";
+    expect(await nft.totalSupply(1)).to.equal(0);
+    await nft.mintToCaller(caller, 1, 2, URI);
+    expect(await nft.totalSupply(1)).to.equal(2);
+    await nft.burn(caller, 1, 1);
+    expect(await nft.totalSupply(1)).to.equal(1);
+  });
 
 //   it("It should deploy the contract, mint token, then check tokenOfOwnerByIndex / tokenByIndex", async () => {
 //     const nft = await deploy(true);
