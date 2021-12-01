@@ -110,6 +110,7 @@ contract ERC1155NFTCustom is ERC1155, AccessControl {
     ) public onlyRole(MINTER_ROLE) {
         for (uint256 i = 0; i < ids.length; i++) {
             require(!_exists(ids[i]), "NFT: one of tokens are already minted");
+            require(amounts[i]>0, "NFT: all amounts must be > 0");
             tokenSupply[ids[i]] += amounts[i];
             if (bytes(uris[i]).length > 0) {
                 _tokenURIs[ids[i]] = uris[i];
