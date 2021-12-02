@@ -31,5 +31,14 @@ describe("ERC1155NFT", function () {
     expect(await nft.uri(2)).to.equal(URI2);
   });
 
+  it("It should deploy the contract, revert mintBatch w/insufficient params", async () => {
+    const nft = await deploy(true);
+    const URI = "default";
+    const URI2 = "default2";
+    await expect(nft.mintToCallerBatch(caller, [1,2], [2], [URI, URI2])).to.be.reverted;
+    await expect(nft.mintToCallerBatch(caller, [1,2], [0,1], [URI, URI2])).to.be.reverted;
+    await expect(nft.mintToCallerBatch(caller, [1,2], [2], [URI, URI2])).to.be.reverted;
+  });
+
 
 });
