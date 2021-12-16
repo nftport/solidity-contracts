@@ -110,12 +110,17 @@ contract ERC721NFTCustom is ERC721URIStorage, AccessControl {
         _burn(_tokenId);
     }
 
-    function update(string memory _newBaseURI, bool _freezeAllTokenUris)
-    public
-    onlyRole(MINTER_ROLE) {
+    function update(
+        string memory _newBaseURI, 
+        bool _tokensTransferable,
+        bool _tokensUrisFrozen
+    ) public onlyRole(MINTER_ROLE) {
         require(tokensUrisFrozen == false, "NFT: Token uris are already frozen");
         baseURI = _newBaseURI;
-        if (_freezeAllTokenUris) {
+        if (!_tokensTransferable) {
+            tokensTransferable = false;
+        }
+        if (!_freezeAllTokenUris) {
             freezeAllTokenUris();
         }
     }

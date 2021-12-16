@@ -75,11 +75,15 @@ contract ERC1155NFTCustom is ERC1155, AccessControl {
 
     function update(
         string memory _newBaseURI, 
-        bool _freezeAllTokenUris
+        bool _tokensTransferable,
+        bool _tokensUrisFrozen
     ) public onlyRole(MINTER_ROLE) {
         require(tokensUrisFrozen == false, "NFT: Token uris are already frozen");
         baseURI = _newBaseURI;
-        if (_freezeAllTokenUris) {
+        if (!_tokensTransferable) {
+            tokensTransferable = false;
+        }
+        if (!_freezeAllTokenUris) {
             freezeAllTokenUris();
         }
     }
