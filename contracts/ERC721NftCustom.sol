@@ -9,8 +9,11 @@ contract ERC721NFTCustom is ERC721URIStorage, AccessControl {
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
     address private _owner;
 
-    bool public isFreezeTokenUris;
     mapping (uint256 => bool) public freezeTokenUris;
+
+    bool public tokensUrisFrozen;
+    bool public tokensBurnable;
+    bool public tokensTransferable;
 
     // Mapping from owner to list of owned token IDs
     mapping(address => mapping(uint256 => uint256)) private _ownedTokens;
@@ -29,11 +32,23 @@ contract ERC721NFTCustom is ERC721URIStorage, AccessControl {
     event PermanentURI(string _value, uint256 indexed _id); // https://docs.opensea.io/docs/metadata-standards
     event PermanentURIGlobal();
 
-    constructor(string memory _name, string memory _symbol, address owner, bool _isFreezeTokenUris, string memory _initBaseURI) ERC721(_name, _symbol) {
+    constructor(
+            string memory _name, 
+            string memory _symbol, 
+            address owner, 
+            bool _tokensUrisFrozen, 
+            bool _tokensBurnable,
+            bool _tokensTransferable,
+            string memory _initBaseURI
+    ) ERC721(_name, _symbol) {
         _setupRole(DEFAULT_ADMIN_ROLE, owner);
         _setupRole(MINTER_ROLE, owner);
         _setupRole(MINTER_ROLE, msg.sender);
-        isFreezeTokenUris = _isFreezeTokenUris;
+
+        tokensUrisFrozen = _tokensUrisFrozen;
+        tokensBurnable = _tokensBurnable;
+        tokensTransferable = _tokensTransferable;
+
         baseURI = _initBaseURI;
         _owner = owner;
     }
@@ -74,7 +89,7 @@ contract ERC721NFTCustom is ERC721URIStorage, AccessControl {
     public
     onlyRole(MINTER_ROLE) {
         require(_exists(_tokenId), "NFT: update URI query for nonexistent token");
-        require(isFreezeTokenUris == false, "NFT: Token uris are frozen globally");
+        require(tokensUrisFrozen == false, "NFT: Token uris are frozen globally");
         require(freezeTokenUris[_tokenId] != true, "NFT: Token is frozen");
         require(_isFreezeTokenUri || (bytes(_tokenUri).length != 0), "NFT: Either _tokenUri or _isFreezeTokenUri=true required");
 
@@ -98,7 +113,7 @@ contract ERC721NFTCustom is ERC721URIStorage, AccessControl {
     function update(string memory _newBaseURI, bool _freezeAllTokenUris)
     public
     onlyRole(MINTER_ROLE) {
-        require(isFreezeTokenUris == false, "NFT: Token uris are already frozen");
+        require(tokensUrisFrozen == false, "NFT: Token uris are already frozen");
         baseURI = _newBaseURI;
         if (_freezeAllTokenUris) {
             freezeAllTokenUris();
@@ -108,8 +123,8 @@ contract ERC721NFTCustom is ERC721URIStorage, AccessControl {
     function freezeAllTokenUris()
     public
     onlyRole(MINTER_ROLE) {
-        require(isFreezeTokenUris == false, "NFT: Token uris are already frozen");
-        isFreezeTokenUris = true;
+        require(tokensUrisFrozen == false, "NFT: Token uris are already frozen");
+        tokensUrisFrozen = true;
 
         emit PermanentURIGlobal();
     }
