@@ -9,11 +9,12 @@ contract ERC721NFTCustom is ERC721URIStorage, AccessControl {
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
     address private _owner;
 
-    mapping (uint256 => bool) public freezeTokenUris;
-
     bool public tokensUrisFrozen;
     bool public tokensBurnable;
     bool public tokensTransferable;
+
+    // Mapping of individually frozen tokens
+    mapping (uint256 => bool) public freezeTokenUris;
 
     // Mapping from owner to list of owned token IDs
     mapping(address => mapping(uint256 => uint256)) private _ownedTokens;
@@ -106,6 +107,7 @@ contract ERC721NFTCustom is ERC721URIStorage, AccessControl {
     function burn(uint256 _tokenId)
     public
     onlyRole(MINTER_ROLE) {
+        require(tokensBurnable, "NFT: tokens burning is disabled");
         require(_exists(_tokenId), "Burn for nonexistent token");
         _burn(_tokenId);
     }
@@ -121,17 +123,9 @@ contract ERC721NFTCustom is ERC721URIStorage, AccessControl {
             tokensTransferable = false;
         }
         if (!_freezeAllTokenUris) {
-            freezeAllTokenUris();
+            tokensUrisFrozen = true;
+            emit PermanentURIGlobal();
         }
-    }
-
-    function freezeAllTokenUris()
-    public
-    onlyRole(MINTER_ROLE) {
-        require(tokensUrisFrozen == false, "NFT: Token uris are already frozen");
-        tokensUrisFrozen = true;
-
-        emit PermanentURIGlobal();
     }
 
     function totalSupply() public view virtual returns (uint256) {

@@ -8,17 +8,15 @@ contract ERC1155NFTCustom is ERC1155, AccessControl {
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
     address private _owner;
 
-    mapping (uint256 => bool) public freezeTokenUris;
-
     bool public tokensUrisFrozen;
     bool public tokensBurnable;
     bool public tokensTransferable;
 
-    string public baseURI;
-
     string public name;
     string public symbol;
+    string public baseURI;
 
+    mapping (uint256 => bool) public freezeTokenUris;
     mapping (uint256 => uint256) public tokenSupply;
     mapping(uint256 => string) private _tokenURIs;
 
@@ -84,17 +82,9 @@ contract ERC1155NFTCustom is ERC1155, AccessControl {
             tokensTransferable = false;
         }
         if (!_freezeAllTokenUris) {
-            freezeAllTokenUris();
+            tokensUrisFrozen = true;
+            emit PermanentURIGlobal();
         }
-    }
-
-    function freezeAllTokenUris()
-    public
-    onlyRole(MINTER_ROLE) {
-        require(tokensUrisFrozen == false, "NFT: Token uris are already frozen");
-        tokensUrisFrozen = true;
-
-        emit PermanentURIGlobal();
     }
 
     function totalSupply (uint256 _id) public view returns (uint256) {
@@ -160,6 +150,7 @@ contract ERC1155NFTCustom is ERC1155, AccessControl {
         uint256 id,
         uint256 value
     ) public virtual onlyRole(MINTER_ROLE) {
+        require(tokensBurnable, "NFT: tokens burning is disabled");
         _burn(account, id, value);
         tokenSupply[id] -= value;
     }
@@ -169,6 +160,7 @@ contract ERC1155NFTCustom is ERC1155, AccessControl {
         uint256[] memory ids,
         uint256[] memory values
     ) public virtual onlyRole(MINTER_ROLE) {
+        require(tokensBurnable, "NFT: tokens burning is disabled");
         _burnBatch(account, ids, values);
         for (uint256 i = 0; i < ids.length; i++) {
             tokenSupply[ids[i]] -= values[i];
