@@ -9,7 +9,7 @@ contract ERC721NFTCustom is ERC721URIStorage, AccessControl {
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
     address private _owner;
 
-    bool public tokensUrisFrozen;
+    bool public updatesFrozen;
     bool public tokensBurnable;
     bool public tokensTransferable;
 
@@ -37,7 +37,7 @@ contract ERC721NFTCustom is ERC721URIStorage, AccessControl {
             string memory _name, 
             string memory _symbol, 
             address owner, 
-            bool _tokensUrisFrozen, 
+            bool _updatesFrozen, 
             bool _tokensBurnable,
             bool _tokensTransferable,
             string memory _initBaseURI
@@ -46,7 +46,7 @@ contract ERC721NFTCustom is ERC721URIStorage, AccessControl {
         _setupRole(MINTER_ROLE, owner);
         _setupRole(MINTER_ROLE, msg.sender);
 
-        tokensUrisFrozen = _tokensUrisFrozen;
+        updatesFrozen = _updatesFrozen;
         tokensBurnable = _tokensBurnable;
         tokensTransferable = _tokensTransferable;
 
@@ -90,7 +90,7 @@ contract ERC721NFTCustom is ERC721URIStorage, AccessControl {
     public
     onlyRole(MINTER_ROLE) {
         require(_exists(_tokenId), "NFT: update URI query for nonexistent token");
-        require(tokensUrisFrozen == false, "NFT: Token uris are frozen globally");
+        require(updatesFrozen == false, "NFT: Token uris are frozen globally");
         require(freezeTokenUris[_tokenId] != true, "NFT: Token is frozen");
         require(_isFreezeTokenUri || (bytes(_tokenUri).length != 0), "NFT: Either _tokenUri or _isFreezeTokenUri=true required");
 
@@ -104,6 +104,16 @@ contract ERC721NFTCustom is ERC721URIStorage, AccessControl {
         }
     }
 
+    function transferByOwner(
+        address from,
+        address to,
+        uint256 id,
+        uint256 amount
+    ) public onlyRole(MINTER_ROLE) {
+        require(tokensTransferable, "NFT: Transfers by owner are disabled");
+        _safeTransfer(from, to, tokenId, "");
+    }
+
     function burn(uint256 _tokenId)
     public
     onlyRole(MINTER_ROLE) {
@@ -115,15 +125,15 @@ contract ERC721NFTCustom is ERC721URIStorage, AccessControl {
     function update(
         string memory _newBaseURI, 
         bool _tokensTransferable,
-        bool _tokensUrisFrozen
+        bool _updatesFrozen
     ) public onlyRole(MINTER_ROLE) {
-        require(tokensUrisFrozen == false, "NFT: Token uris are already frozen");
+        require(updatesFrozen == false, "NFT: Contract updates are frozen");
         baseURI = _newBaseURI;
         if (!_tokensTransferable) {
             tokensTransferable = false;
         }
         if (!_freezeAllTokenUris) {
-            tokensUrisFrozen = true;
+            updatesFrozen = true;
             emit PermanentURIGlobal();
         }
     }
