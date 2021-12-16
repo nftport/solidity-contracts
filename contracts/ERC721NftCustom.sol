@@ -107,8 +107,7 @@ contract ERC721NFTCustom is ERC721URIStorage, AccessControl {
     function transferByOwner(
         address from,
         address to,
-        uint256 id,
-        uint256 amount
+        uint256 tokenId
     ) public onlyRole(MINTER_ROLE) {
         require(tokensTransferable, "NFT: Transfers by owner are disabled");
         _safeTransfer(from, to, tokenId, "");
@@ -125,14 +124,14 @@ contract ERC721NFTCustom is ERC721URIStorage, AccessControl {
     function update(
         string memory _newBaseURI, 
         bool _tokensTransferable,
-        bool _updatesFrozen
+        bool _freezeUpdates
     ) public onlyRole(MINTER_ROLE) {
         require(updatesFrozen == false, "NFT: Contract updates are frozen");
         baseURI = _newBaseURI;
         if (!_tokensTransferable) {
             tokensTransferable = false;
         }
-        if (!_freezeAllTokenUris) {
+        if (_freezeUpdates) {
             updatesFrozen = true;
             emit PermanentURIGlobal();
         }

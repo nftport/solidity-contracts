@@ -93,14 +93,14 @@ contract ERC1155NFTCustom is ERC1155, AccessControl {
     function update(
         string memory _newBaseURI, 
         bool _tokensTransferable,
-        bool _updatesFrozen
+        bool _freezeUpdates
     ) public onlyRole(MINTER_ROLE) {
         require(updatesFrozen == false, "NFT: Contract updates are frozen");
         baseURI = _newBaseURI;
         if (!_tokensTransferable) {
             tokensTransferable = false;
         }
-        if (!_freezeAllTokenUris) {
+        if (_freezeUpdates) {
             updatesFrozen = true;
             emit PermanentURIGlobal();
         }
