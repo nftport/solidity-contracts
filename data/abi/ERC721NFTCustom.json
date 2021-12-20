@@ -18,7 +18,17 @@
       },
       {
         "internalType": "bool",
-        "name": "_isFreezeTokenUris",
+        "name": "_metadataUpdatable",
+        "type": "bool"
+      },
+      {
+        "internalType": "bool",
+        "name": "_tokensBurnable",
+        "type": "bool"
+      },
+      {
+        "internalType": "bool",
+        "name": "_tokensTransferable",
         "type": "bool"
       },
       {
@@ -295,13 +305,6 @@
     "type": "function"
   },
   {
-    "inputs": [],
-    "name": "freezeAllTokenUris",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
     "inputs": [
       {
         "internalType": "uint256",
@@ -426,7 +429,7 @@
   },
   {
     "inputs": [],
-    "name": "isFreezeTokenUris",
+    "name": "metadataUpdatable",
     "outputs": [
       {
         "internalType": "bool",
@@ -712,6 +715,32 @@
   },
   {
     "inputs": [],
+    "name": "tokensBurnable",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "tokensTransferable",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
     "name": "totalSupply",
     "outputs": [
       {
@@ -721,6 +750,29 @@
       }
     ],
     "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "from",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "to",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "tokenId",
+        "type": "uint256"
+      }
+    ],
+    "name": "transferByOwner",
+    "outputs": [],
+    "stateMutability": "nonpayable",
     "type": "function"
   },
   {
@@ -755,7 +807,12 @@
       },
       {
         "internalType": "bool",
-        "name": "_freezeAllTokenUris",
+        "name": "_tokensTransferable",
+        "type": "bool"
+      },
+      {
+        "internalType": "bool",
+        "name": "_freezeUpdates",
         "type": "bool"
       }
     ],

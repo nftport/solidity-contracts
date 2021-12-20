@@ -3,11 +3,6 @@
     "inputs": [
       {
         "internalType": "string",
-        "name": "_uri",
-        "type": "string"
-      },
-      {
-        "internalType": "string",
         "name": "_name",
         "type": "string"
       },
@@ -23,12 +18,27 @@
       },
       {
         "internalType": "bool",
-        "name": "_isFreezeTokenUris",
+        "name": "_metadataUpdatable",
+        "type": "bool"
+      },
+      {
+        "internalType": "bool",
+        "name": "_tokensBurnable",
+        "type": "bool"
+      },
+      {
+        "internalType": "bool",
+        "name": "_tokensTransferable",
         "type": "bool"
       },
       {
         "internalType": "string",
         "name": "_initBaseURI",
+        "type": "string"
+      },
+      {
+        "internalType": "string",
+        "name": "_defaultUri",
         "type": "string"
       }
     ],
@@ -366,9 +376,9 @@
   {
     "inputs": [
       {
-        "internalType": "address",
+        "internalType": "address[]",
         "name": "account",
-        "type": "address"
+        "type": "address[]"
       },
       {
         "internalType": "uint256[]",
@@ -382,13 +392,6 @@
       }
     ],
     "name": "burnBatch",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "freezeAllTokenUris",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -499,7 +502,7 @@
   },
   {
     "inputs": [],
-    "name": "isFreezeTokenUris",
+    "name": "metadataUpdatable",
     "outputs": [
       {
         "internalType": "bool",
@@ -533,7 +536,7 @@
         "type": "string"
       }
     ],
-    "name": "mintToCaller",
+    "name": "mintByOwner",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -541,9 +544,9 @@
   {
     "inputs": [
       {
-        "internalType": "address",
+        "internalType": "address[]",
         "name": "to",
-        "type": "address"
+        "type": "address[]"
       },
       {
         "internalType": "uint256[]",
@@ -561,7 +564,7 @@
         "type": "string[]"
       }
     ],
-    "name": "mintToCallerBatch",
+    "name": "mintByOwnerBatch",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -777,6 +780,32 @@
     "type": "function"
   },
   {
+    "inputs": [],
+    "name": "tokensBurnable",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "tokensTransferable",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [
       {
         "internalType": "uint256",
@@ -798,13 +827,74 @@
   {
     "inputs": [
       {
+        "internalType": "address",
+        "name": "from",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "to",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "id",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      }
+    ],
+    "name": "transferByOwner",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "from",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "to",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256[]",
+        "name": "ids",
+        "type": "uint256[]"
+      },
+      {
+        "internalType": "uint256[]",
+        "name": "amounts",
+        "type": "uint256[]"
+      }
+    ],
+    "name": "transferByOwnerBatch",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
         "internalType": "string",
         "name": "_newBaseURI",
         "type": "string"
       },
       {
         "internalType": "bool",
-        "name": "_freezeAllTokenUris",
+        "name": "_tokensTransferable",
+        "type": "bool"
+      },
+      {
+        "internalType": "bool",
+        "name": "_freezeUpdates",
         "type": "bool"
       }
     ],
