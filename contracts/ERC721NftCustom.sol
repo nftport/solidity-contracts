@@ -9,7 +9,7 @@ contract ERC721NFTCustom is ERC721URIStorage, AccessControl {
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
     address private _owner;
 
-    bool public updatesFrozen;
+    bool public metadataUpdatable;
     bool public tokensBurnable;
     bool public tokensTransferable;
 
@@ -37,7 +37,7 @@ contract ERC721NFTCustom is ERC721URIStorage, AccessControl {
             string memory _name, 
             string memory _symbol, 
             address owner, 
-            bool _updatesFrozen, 
+            bool _metadataUpdatable, 
             bool _tokensBurnable,
             bool _tokensTransferable,
             string memory _initBaseURI
@@ -46,7 +46,7 @@ contract ERC721NFTCustom is ERC721URIStorage, AccessControl {
         _setupRole(MINTER_ROLE, owner);
         _setupRole(MINTER_ROLE, msg.sender);
 
-        updatesFrozen = _updatesFrozen;
+        metadataUpdatable = _metadataUpdatable;
         tokensBurnable = _tokensBurnable;
         tokensTransferable = _tokensTransferable;
 
@@ -90,7 +90,7 @@ contract ERC721NFTCustom is ERC721URIStorage, AccessControl {
     public
     onlyRole(MINTER_ROLE) {
         require(_exists(_tokenId), "NFT: update URI query for nonexistent token");
-        require(updatesFrozen == false, "NFT: Token uris are frozen globally");
+        require(metadataUpdatable, "NFT: Token uris are frozen globally");
         require(freezeTokenUris[_tokenId] != true, "NFT: Token is frozen");
         require(_isFreezeTokenUri || (bytes(_tokenUri).length != 0), "NFT: Either _tokenUri or _isFreezeTokenUri=true required");
 
@@ -126,13 +126,13 @@ contract ERC721NFTCustom is ERC721URIStorage, AccessControl {
         bool _tokensTransferable,
         bool _freezeUpdates
     ) public onlyRole(MINTER_ROLE) {
-        require(updatesFrozen == false, "NFT: Contract updates are frozen");
+        require(metadataUpdatable, "NFT: Contract updates are frozen");
         baseURI = _newBaseURI;
         if (!_tokensTransferable) {
             tokensTransferable = false;
         }
         if (_freezeUpdates) {
-            updatesFrozen = true;
+            metadataUpdatable = false;
             emit PermanentURIGlobal();
         }
     }
