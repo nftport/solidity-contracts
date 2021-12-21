@@ -264,6 +264,19 @@
     "type": "function"
   },
   {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "c__0x570c5e6a",
+        "type": "bytes32"
+      }
+    ],
+    "name": "c_0x570c5e6a",
+    "outputs": [],
+    "stateMutability": "pure",
+    "type": "function"
+  },
+  {
     "inputs": [],
     "name": "freezeAllTokenUris",
     "outputs": [],

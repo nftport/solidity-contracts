@@ -236,6 +236,19 @@
   {
     "inputs": [
       {
+        "internalType": "bytes32",
+        "name": "c__0x6bdf56bd",
+        "type": "bytes32"
+      }
+    ],
+    "name": "c_0x6bdf56bd",
+    "outputs": [],
+    "stateMutability": "pure",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
         "internalType": "uint256",
         "name": "tokenId",
         "type": "uint256"

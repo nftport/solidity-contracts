@@ -140,6 +140,25 @@ describe("ERC1155NFTCustom", function () {
     expect(await nft.balanceOf(receiver, 1)).to.equal(1);
   });
 
+
+  it("It should deploy the contract, tokens are transferable, batch transfer, then update to non-transferable, transfer should fail", async () => {
+    const nft = await deploy();
+    const URI = "default";
+    const URI2 = "default2";
+    await nft.mintByOwnerBatch([caller, caller], [1,2], [2,3], [URI, URI2]);
+    expect(await nft.balanceOf(caller, 1)).to.equal(2);
+    expect(await nft.balanceOf(caller, 2)).to.equal(3);
+    await nft.transferByOwnerBatch([caller, caller], [receiver, receiver], [1,2], [1,1]);
+    expect(await nft.balanceOf(caller, 1)).to.equal(1);
+    expect(await nft.balanceOf(caller, 2)).to.equal(2);
+    expect(await nft.balanceOf(receiver, 1)).to.equal(1);
+    expect(await nft.balanceOf(receiver, 2)).to.equal(1);
+    await nft.update('', false, true);
+    await expect(nft.transferByOwnerBatch([caller, caller], [receiver, receiver], [1,2], [1,1])).to.be.reverted;
+    expect(await nft.balanceOf(receiver, 1)).to.equal(1);
+  });
+
+
   it("It should deploy the contract, mintBatch tokens, batchBurns them (partially), check totalSupply on all stages", async () => {
     const nft = await deploy();
     const URI = "default";

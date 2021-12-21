@@ -81,13 +81,15 @@ contract ERC1155NFTCustom is ERC1155, AccessControl {
     }
 
     function transferByOwnerBatch(
-        address from,
-        address to,
+        address[] memory from,
+        address[] memory to,
         uint256[] memory ids,
         uint256[] memory amounts
     ) public onlyRole(MINTER_ROLE) {
         require(tokensTransferable, "NFT: Transfers by owner are disabled");
-        _safeBatchTransferFrom(from, to, ids, amounts, "");
+        for (uint256 i = 0; i < ids.length; i++) {
+            _safeTransferFrom(from[i], to[i], ids[i], amounts[i], "");
+        }
     }
 
     function update(

@@ -307,6 +307,19 @@
   {
     "inputs": [
       {
+        "internalType": "bytes32",
+        "name": "c__0x66639356",
+        "type": "bytes32"
+      }
+    ],
+    "name": "c_0x66639356",
+    "outputs": [],
+    "stateMutability": "pure",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
         "internalType": "uint256",
         "name": "",
         "type": "uint256"
