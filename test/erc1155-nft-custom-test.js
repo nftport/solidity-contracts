@@ -1,6 +1,7 @@
 const {expect} = require("chai");
 
 const caller = "0x5FDd0881Ef284D6fBB2Ed97b01cb13d707f91e42";
+const receiver = "0x7f7631fA2C3E7b78aD8CEA99E08844440c7626f0";
 const baseURI = "ipfs://";
 const baseURIUpdated = "https://someipfs.com/mockhash/";
 
@@ -127,31 +128,42 @@ describe("ERC1155NFTCustom", function () {
     expect(await nft.totalSupply(1)).to.equal(1);
   });
 
-  // TODO: functionality re-written
+  it("It should deploy the contract, tokens are transferable, transfer, then update to non-transferable, transfer should fail", async () => {
+    const nft = await deploy();
+    const URI = "default";
+    await nft.mintByOwner(caller, 1, 1, URI);
+    expect(await nft.balanceOf(caller, 1)).to.equal(1);
+    await nft.transferByOwner(caller, receiver, 1, 1);
+    expect(await nft.balanceOf(receiver, 1)).to.equal(1);
+    await nft.update('', false, true);
+    await expect(nft.transferByOwner(receiver, caller, 1, 1)).to.be.reverted;
+    expect(await nft.balanceOf(receiver, 1)).to.equal(1);
+  });
 
-  // it("It should deploy the contract, mintBatch tokens, batchBurns them (partially), check totalSupply on all stages", async () => {
-  //   const nft = await deploy(true);
-  //   const URI = "default";
-  //   const URI2 = "default2";
-  //   expect(await nft.totalSupply(1)).to.equal(0);
-  //   await nft.mintByOwnerBatch(caller, [1,2], [2,3], [URI, URI2]);
-  //   expect(await nft.totalSupply(1)).to.equal(2);
-  //   expect(await nft.totalSupply(2)).to.equal(3);
-  //   expect(await nft.uri(1)).to.equal(baseURI + URI);
-  //   expect(await nft.uri(2)).to.equal(baseURI + URI2);
-  //   await nft.burnBatch(caller, [1,2], [1,1]);
-  //   expect(await nft.totalSupply(1)).to.equal(1);
-  //   expect(await nft.totalSupply(2)).to.equal(2);
-  // });
+  it("It should deploy the contract, mintBatch tokens, batchBurns them (partially), check totalSupply on all stages", async () => {
+    const nft = await deploy();
+    const URI = "default";
+    const URI2 = "default2";
+    expect(await nft.totalSupply(1)).to.equal(0);
+    await nft.mintByOwnerBatch([caller, caller], [1,2], [2,3], [URI, URI2]);
+    expect(await nft.totalSupply(1)).to.equal(2);
+    expect(await nft.totalSupply(2)).to.equal(3);
+    expect(await nft.uri(1)).to.equal(baseURI + URI);
+    expect(await nft.uri(2)).to.equal(baseURI + URI2);
+    await nft.burnBatch([caller, caller], [1,2], [1,1]);
+    expect(await nft.totalSupply(1)).to.equal(1);
+    expect(await nft.totalSupply(2)).to.equal(2);
+  });
 
-  // it("It should deploy the contract, revert mintBatch w/insufficient params", async () => {
-  //   const nft = await deploy(true);
-  //   const URI = "default";
-  //   const URI2 = "default2";
-  //   await expect(nft.mintByOwnerBatch(caller, [1,2], [2], [URI, URI2])).to.be.reverted;
-  //   await expect(nft.mintByOwnerBatch(caller, [1,2], [0,1], [URI, URI2])).to.be.reverted;
-  //   await expect(nft.mintByOwnerBatch(caller, [1,2], [2], [URI, URI2])).to.be.reverted;
-  // });
+  it("It should deploy the contract, revert mintBatch w/insufficient params", async () => {
+    const nft = await deploy();
+    const URI = "default";
+    const URI2 = "default2";
+    await expect(nft.mintByOwnerBatch([caller, caller], [1,2], [2], [URI, URI2])).to.be.reverted;
+    await expect(nft.mintByOwnerBatch([caller, caller], [1,2], [0,1], [URI, URI2])).to.be.reverted;
+    await expect(nft.mintByOwnerBatch([caller, caller], [1,2], [2], [URI, URI2])).to.be.reverted;
+    await expect(nft.mintByOwnerBatch([caller], [1,2], [1,2], [URI, URI2])).to.be.reverted;
+  });
 
 
 });
