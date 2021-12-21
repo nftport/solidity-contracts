@@ -1,6 +1,7 @@
 const {expect} = require("chai");
 
 const caller = "0x5FDd0881Ef284D6fBB2Ed97b01cb13d707f91e42";
+const receiver = "0x7f7631fA2C3E7b78aD8CEA99E08844440c7626f0";
 const baseURI = "ipfs://";
 const baseURIUpdated = "https://someipfs.com/mockhash/";
 
@@ -139,4 +140,16 @@ describe("ERC721NFTCustom", function () {
     await expect(nft.tokenByIndex(0)).to.be.reverted;
   });
 
+
+  it("It should deploy the contract, tokens are transferable, transfer, then update to non-transferable, transfer should fail", async () => {
+    const nft = await deploy();
+    const URI = "default";
+    await nft.mintToCaller(caller, 1, URI);
+    expect(await nft.ownerOf(1)).to.equal(caller);
+    await nft.transferByOwner(caller, receiver, 1);
+    expect(await nft.ownerOf(1)).to.equal(receiver);
+    await nft.update('', false, true);
+    await expect(nft.transferByOwner(receiver, caller, 1)).to.be.reverted;
+    expect(await nft.ownerOf(1)).to.equal(receiver);
+  });
 });
