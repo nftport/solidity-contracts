@@ -70,25 +70,36 @@ contract ERC1155NFTCustom is ERC1155, AccessControl {
         }
     }
 
-    function transferByOwner(
-        address from,
-        address to,
+    function burn(
         uint256 id,
-        uint256 amount
-    ) public onlyRole(MINTER_ROLE) {
-        require(tokensTransferable, "NFT: Transfers by owner are disabled");
-        _safeTransferFrom(from, to, id, amount, "");
+        uint256 value
+    ) public virtual {
+        require(tokensBurnable, "NFT: tokens burning is disabled");
+        
+        _burn(msg.sender, id, value);
+        tokenSupply[id] -= value;
     }
 
-    function transferByOwnerBatch(
+    function burnBatch(
+        uint256[] memory ids,
+        uint256[] memory values
+    ) public virtual {
+        require(tokensBurnable, "NFT: tokens burning is disabled");
+        _burnBatch(msg.sender, ids, values);
+        for (uint256 i = 0; i < ids.length; i++) {
+            tokenSupply[ids[i]] -= values[i];
+        }
+    }
+
+    function safeBatchTransferFromMultiAddresses(
         address[] memory from,
         address[] memory to,
         uint256[] memory ids,
         uint256[] memory amounts
-    ) public onlyRole(MINTER_ROLE) {
+    ) public {
         require(tokensTransferable, "NFT: Transfers by owner are disabled");
         for (uint256 i = 0; i < ids.length; i++) {
-            _safeTransferFrom(from[i], to[i], ids[i], amounts[i], "");
+            safeTransferFrom(from[i], to[i], ids[i], amounts[i], "");
         }
     }
 
@@ -165,27 +176,5 @@ contract ERC1155NFTCustom is ERC1155, AccessControl {
 
     function _exists(uint256 _tokenId) internal view virtual returns (bool) {
         return tokenSupply[_tokenId] > 0;
-    }
-
-    function burn(
-        address account,
-        uint256 id,
-        uint256 value
-    ) public virtual onlyRole(MINTER_ROLE) {
-        require(tokensBurnable, "NFT: tokens burning is disabled");
-        _burn(account, id, value);
-        tokenSupply[id] -= value;
-    }
-
-    function burnBatch(
-        address[] memory account,
-        uint256[] memory ids,
-        uint256[] memory values
-    ) public virtual onlyRole(MINTER_ROLE) {
-        require(tokensBurnable, "NFT: tokens burning is disabled");
-        for (uint256 i = 0; i < ids.length; i++) {
-            tokenSupply[ids[i]] -= values[i];
-            _burn(account[i], ids[i], values[i]);
-        }
     }
 }
