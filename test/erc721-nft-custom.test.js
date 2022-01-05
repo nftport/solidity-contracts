@@ -117,7 +117,7 @@ describe("ERC721NFTCustom", function () {
     await nft.mintToCaller(owner.address, 1, URI);
     expect(await nft.tokenURI(1)).to.equal(baseURI + URI);
     await expect(nft.connect(receiver).burn(1)).to.be.reverted;
-    await nft.connect(owner).burn(1);
+    await nft.burn(1);
     await expect(nft.updateTokenUri(1, URI, true)).to.be.reverted;
     await expect(nft.burn(1)).to.be.reverted;
   });
@@ -128,7 +128,7 @@ describe("ERC721NFTCustom", function () {
     expect(await nft.totalSupply()).to.equal(0);
     await nft.mintToCaller(owner.address, 1, URI);
     expect(await nft.totalSupply()).to.equal(1);
-    await nft.connect(owner).burn(1);
+    await nft.burn(1);
     expect(await nft.totalSupply()).to.equal(0);
   });
 
@@ -141,7 +141,7 @@ describe("ERC721NFTCustom", function () {
     expect(await nft.tokenByIndex(0)).to.equal(12345);
     await expect(nft.tokenOfOwnerByIndex(owner.address, 1)).to.be.reverted;
     await expect(nft.tokenByIndex(1)).to.be.reverted;
-    await nft.connect(owner).burn(12345);
+    await nft.burn(12345);
     await expect(nft.tokenOfOwnerByIndex(owner.address, 0)).to.be.reverted;
     await expect(nft.tokenByIndex(0)).to.be.reverted;
   });
@@ -152,7 +152,7 @@ describe("ERC721NFTCustom", function () {
     const URI = "default";
     await nft.mintToCaller(owner.address, 1, URI);
     expect(await nft.ownerOf(1)).to.equal(owner.address);
-    await nft.connect(owner).transferByOwner(owner.address, receiver.address, 1);
+    await nft.transferByOwner(owner.address, receiver.address, 1);
     expect(await nft.ownerOf(1)).to.equal(receiver.address);
     await nft.update('', false, true);
     await expect(nft.transferByOwner(receiver.address, owner.address, 1)).to.be.reverted;
