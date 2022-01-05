@@ -73,33 +73,41 @@ contract ERC1155NFTCustom is ERC1155, AccessControl {
     function burn(
         uint256 id,
         uint256 value
-    ) public virtual {
+    ) public onlyRole(MINTER_ROLE) {
         require(tokensBurnable, "NFT: tokens burning is disabled");
         
-        _burn(msg.sender, id, value);
+        _burn(_owner, id, value);
         tokenSupply[id] -= value;
     }
 
     function burnBatch(
         uint256[] memory ids,
         uint256[] memory values
-    ) public virtual {
+    ) public onlyRole(MINTER_ROLE) {
         require(tokensBurnable, "NFT: tokens burning is disabled");
-        _burnBatch(msg.sender, ids, values);
+        _burnBatch(_owner, ids, values);
         for (uint256 i = 0; i < ids.length; i++) {
             tokenSupply[ids[i]] -= values[i];
         }
     }
 
-    function safeBatchTransferFromMultiAddresses(
-        address[] memory from,
+    function transferByOwner(
+        address to,
+        uint256 id,
+        uint256 amount
+    ) public onlyRole(MINTER_ROLE) {
+        require(tokensTransferable, "NFT: Transfers by owner are disabled");
+        _safeTransferFrom(_owner, to, id, amount, "");
+    }
+
+    function transferByOwnerBatch(
         address[] memory to,
         uint256[] memory ids,
         uint256[] memory amounts
-    ) public {
+    ) public onlyRole(MINTER_ROLE) {
         require(tokensTransferable, "NFT: Transfers by owner are disabled");
         for (uint256 i = 0; i < ids.length; i++) {
-            safeTransferFrom(from[i], to[i], ids[i], amounts[i], "");
+            _safeTransferFrom(_owner, to[i], ids[i], amounts[i], "");
         }
     }
 

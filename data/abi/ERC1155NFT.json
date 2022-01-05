@@ -291,19 +291,6 @@
     "inputs": [
       {
         "internalType": "bytes32",
-        "name": "c__0xf6480db9",
-        "type": "bytes32"
-      }
-    ],
-    "name": "c_0xf6480db9",
-    "outputs": [],
-    "stateMutability": "pure",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "bytes32",
         "name": "role",
         "type": "bytes32"
       }
