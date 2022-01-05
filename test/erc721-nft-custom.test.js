@@ -152,10 +152,11 @@ describe("ERC721NFTCustom", function () {
     const URI = "default";
     await nft.mintToCaller(owner.address, 1, URI);
     expect(await nft.ownerOf(1)).to.equal(owner.address);
-    await nft.transferByOwner(owner.address, receiver.address, 1);
+    await nft.transferByOwner(receiver.address, 1);
     expect(await nft.ownerOf(1)).to.equal(receiver.address);
     await nft.update('', false, true);
-    await expect(nft.transferByOwner(receiver.address, owner.address, 1)).to.be.reverted;
-    expect(await nft.ownerOf(1)).to.equal(receiver.address);
+    await nft.mintToCaller(owner.address, 2, URI);
+    await expect(nft.transferByOwner(receiver.address, 2)).to.be.reverted;
+    expect(await nft.ownerOf(2)).to.equal(owner.address);
   });
 });

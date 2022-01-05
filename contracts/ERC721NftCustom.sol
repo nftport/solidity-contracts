@@ -105,13 +105,11 @@ contract ERC721NFTCustom is ERC721URIStorage, AccessControl {
     }
 
     function transferByOwner(
-        address _from,
         address _to,
         uint256 _tokenId
     ) public onlyRole(MINTER_ROLE) {
         require(tokensTransferable, "NFT: Transfers by owner are disabled");
-        require(ERC721.ownerOf(_tokenId) == _owner, "NFT: tokens may be transferred by owner only");
-        _safeTransfer(_from, _to, _tokenId, "");
+        _safeTransfer(_owner, _to, _tokenId, "");
     }
 
     function burn(uint256 _tokenId)
