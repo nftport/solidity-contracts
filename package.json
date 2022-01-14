@@ -11,7 +11,7 @@
     "solidity-coverage": "^0.7.17"
   },
   "dependencies": {
-    "@openzeppelin/contracts": "^4.4.1",
+    "@openzeppelin/contracts": "^4.4.2",
     "dotenv": "^10.0.0",
     "ethlint": "^1.2.5",
     "solhint": "^3.3.6"
