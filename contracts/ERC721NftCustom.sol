@@ -5,11 +5,15 @@ import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
 
-contract NftCustom is ERC721URIStorage, AccessControl {
+contract ERC721NFTCustom is ERC721URIStorage, AccessControl {
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
     address private _owner;
 
-    bool public isFreezeTokenUris;
+    bool public metadataUpdatable;
+    bool public tokensBurnable;
+    bool public tokensTransferable;
+
+    // Mapping of individually frozen tokens
     mapping (uint256 => bool) public freezeTokenUris;
 
     // Mapping from owner to list of owned token IDs
@@ -29,11 +33,23 @@ contract NftCustom is ERC721URIStorage, AccessControl {
     event PermanentURI(string _value, uint256 indexed _id); // https://docs.opensea.io/docs/metadata-standards
     event PermanentURIGlobal();
 
-    constructor(string memory _name, string memory _symbol, address owner, bool _isFreezeTokenUris, string memory _initBaseURI) ERC721(_name, _symbol) {
+    constructor(
+            string memory _name, 
+            string memory _symbol, 
+            address owner, 
+            bool _metadataUpdatable, 
+            bool _tokensBurnable,
+            bool _tokensTransferable,
+            string memory _initBaseURI
+    ) ERC721(_name, _symbol) {
         _setupRole(DEFAULT_ADMIN_ROLE, owner);
         _setupRole(MINTER_ROLE, owner);
         _setupRole(MINTER_ROLE, msg.sender);
-        isFreezeTokenUris = _isFreezeTokenUris;
+
+        metadataUpdatable = _metadataUpdatable;
+        tokensBurnable = _tokensBurnable;
+        tokensTransferable = _tokensTransferable;
+
         baseURI = _initBaseURI;
         _owner = owner;
     }
@@ -74,7 +90,7 @@ contract NftCustom is ERC721URIStorage, AccessControl {
     public
     onlyRole(MINTER_ROLE) {
         require(_exists(_tokenId), "NFT: update URI query for nonexistent token");
-        require(isFreezeTokenUris == false, "NFT: Token uris are frozen globally");
+        require(metadataUpdatable, "NFT: Token uris are frozen globally");
         require(freezeTokenUris[_tokenId] != true, "NFT: Token is frozen");
         require(_isFreezeTokenUri || (bytes(_tokenUri).length != 0), "NFT: Either _tokenUri or _isFreezeTokenUri=true required");
 
@@ -88,30 +104,36 @@ contract NftCustom is ERC721URIStorage, AccessControl {
         }
     }
 
+    function transferByOwner(
+        address _to,
+        uint256 _tokenId
+    ) public onlyRole(MINTER_ROLE) {
+        require(tokensTransferable, "NFT: Transfers by owner are disabled");
+        _safeTransfer(_owner, _to, _tokenId, "");
+    }
+
     function burn(uint256 _tokenId)
-    public
-    onlyRole(MINTER_ROLE) {
+    public onlyRole(MINTER_ROLE) {
+        require(tokensBurnable, "NFT: tokens burning is disabled");
         require(_exists(_tokenId), "Burn for nonexistent token");
+        require(ERC721.ownerOf(_tokenId) == _owner, "NFT: tokens may be burned by owner only");
         _burn(_tokenId);
     }
 
-    function update(string memory _newBaseURI, bool _freezeAllTokenUris)
-    public
-    onlyRole(MINTER_ROLE) {
-        require(isFreezeTokenUris == false, "NFT: Token uris are already frozen");
+    function update(
+        string memory _newBaseURI, 
+        bool _tokensTransferable,
+        bool _freezeUpdates
+    ) public onlyRole(MINTER_ROLE) {
+        require(metadataUpdatable, "NFT: Contract updates are frozen");
         baseURI = _newBaseURI;
-        if (_freezeAllTokenUris) {
-            freezeAllTokenUris();
+        if (!_tokensTransferable) {
+            tokensTransferable = false;
         }
-    }
-
-    function freezeAllTokenUris()
-    public
-    onlyRole(MINTER_ROLE) {
-        require(isFreezeTokenUris == false, "NFT: Token uris are already frozen");
-        isFreezeTokenUris = true;
-
-        emit PermanentURIGlobal();
+        if (_freezeUpdates) {
+            metadataUpdatable = false;
+            emit PermanentURIGlobal();
+        }
     }
 
     function totalSupply() public view virtual returns (uint256) {

@@ -4,3 +4,4 @@ node_modules
 artifacts/*
 cache
 ./coveragee
+.DS_Store
