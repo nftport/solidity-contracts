@@ -1,13 +1,23 @@
 {
   "name": "nftport-solidity-contracts",
+  "scripts": {
+    "node": "hardhat node --hostname 127.0.0.1",
+    "deploy:polygon": "hardhat deploy --network polygon",
+    "deploy:mumbai": "hardhat deploy --network mumbai",
+    "deploy:rinkeby": "hardhat deploy --network rinkeby",
+    "verify:polygon": "hardhat etherscan-verify --network polygon",
+    "verify:mumbai": "hardhat etherscan-verify --network mumbai",
+    "verify:rinkeby": "hardhat etherscan-verify --network rinkeby"
+  },
   "devDependencies": {
-    "@nomiclabs/hardhat-ethers": "^2.0.2",
+    "@nomiclabs/hardhat-ethers": "npm:hardhat-deploy-ethers@^0.3.0-beta.13",
     "@nomiclabs/hardhat-waffle": "^2.0.1",
     "chai": "^4.3.4",
     "ethereum-waffle": "^3.4.0",
-    "ethers": "^5.4.7",
+    "ethers": "^5.5.4",
     "hardhat": "^2.6.5",
     "hardhat-abi-exporter": "^2.3.0",
+    "hardhat-deploy": "^0.10.5",
     "solidity-coverage": "^0.7.17"
   },
   "dependencies": {
