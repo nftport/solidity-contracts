@@ -3,9 +3,16 @@ pragma solidity 0.8.9;
 
 import "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
+import {IERC2981} from "@openzeppelin/contracts/token/common/ERC2981.sol";
+import "@openzeppelin/contracts/utils/Strings.sol";
+
+import "./Base64.sol";
 
 contract ERC1155NFTCustom is ERC1155, AccessControl {
+    using Strings for uint256;
+
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
+    uint16 constant ROYALTIES_BASIS = 10000;
     address private _owner;
 
     bool public metadataUpdatable;
@@ -16,6 +23,9 @@ contract ERC1155NFTCustom is ERC1155, AccessControl {
     string public symbol;
     string public baseURI;
 
+    address public royaltiesAddress;
+    uint256 public royaltiesBasisPoints;
+
     mapping (uint256 => bool) public freezeTokenUris;
     mapping (uint256 => uint256) public tokenSupply;
     mapping(uint256 => string) private _tokenURIs;
@@ -24,18 +34,23 @@ contract ERC1155NFTCustom is ERC1155, AccessControl {
     event PermanentURIGlobal();
 
     constructor(
-        string memory _name, 
-        string memory _symbol, 
-        address owner, 
-        bool _metadataUpdatable, 
+        string memory _name,
+        string memory _symbol,
+        address owner,
+        bool _metadataUpdatable,
         bool _tokensBurnable,
         bool _tokensTransferable,
         string memory _initBaseURI,
-        string memory _defaultUri
+        string memory _defaultUri,
+        address _royaltiesAddress,
+        uint96 _royaltiesBasisPoints
     ) ERC1155(_defaultUri) {
         _setupRole(DEFAULT_ADMIN_ROLE, owner);
         _setupRole(MINTER_ROLE, owner);
         _setupRole(MINTER_ROLE, msg.sender);
+
+        royaltiesAddress = _royaltiesAddress;
+        royaltiesBasisPoints = _royaltiesBasisPoints;
 
         metadataUpdatable = _metadataUpdatable;
         tokensBurnable = _tokensBurnable;
@@ -75,7 +90,7 @@ contract ERC1155NFTCustom is ERC1155, AccessControl {
         uint256 value
     ) public onlyRole(MINTER_ROLE) {
         require(tokensBurnable, "NFT: tokens burning is disabled");
-        
+
         _burn(_owner, id, value);
         tokenSupply[id] -= value;
     }
@@ -112,12 +127,18 @@ contract ERC1155NFTCustom is ERC1155, AccessControl {
     }
 
     function update(
-        string memory _newBaseURI, 
+        string memory _newBaseURI,
         bool _tokensTransferable,
-        bool _freezeUpdates
+        bool _freezeUpdates,
+        address _royaltiesAddress,
+        uint96 _royaltiesBasisPoints
     ) public onlyRole(MINTER_ROLE) {
         require(metadataUpdatable, "NFT: Contract updates are frozen");
+
         baseURI = _newBaseURI;
+        royaltiesAddress = _royaltiesAddress;
+        royaltiesBasisPoints = _royaltiesBasisPoints;
+
         if (!_tokensTransferable) {
             tokensTransferable = false;
         }
@@ -172,9 +193,41 @@ contract ERC1155NFTCustom is ERC1155, AccessControl {
         }
     }
 
+    function royaltyInfo(
+        uint256 tokenId,
+        uint256 salePrice
+    ) external view returns (address, uint256) {
+        return (royaltiesAddress, royaltiesBasisPoints * salePrice / ROYALTIES_BASIS);
+    }
+
+    function contractURI() external view returns (string memory) {
+        string memory json = Base64.encode(
+            bytes(
+                string(
+                    abi.encodePacked(
+                        // solium-disable-next-line quotes
+                        '{"seller_fee_basis_points": ', // solhint-disable-line
+                        royaltiesBasisPoints.toString(),
+                        // solium-disable-next-line quotes
+                        ', "fee_recipient": "', // solhint-disable-line
+                        uint256(uint160(royaltiesAddress)).toHexString(20),
+                        // solium-disable-next-line quotes
+                        '"}' // solhint-disable-line
+                    )
+                )
+            )
+        );
+
+        string memory output = string(
+            abi.encodePacked("data:application/json;base64,", json)
+        );
+
+        return output;
+    }
+
     function supportsInterface(bytes4 interfaceId) public view override(ERC1155, AccessControl) returns (bool)
     {
-        return ERC1155.supportsInterface(interfaceId);
+        return ERC1155.supportsInterface(interfaceId) || interfaceId == type(IERC2981).interfaceId;
     }
 
     function owner() public view returns (address) {

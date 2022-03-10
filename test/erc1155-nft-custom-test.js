@@ -14,7 +14,9 @@ const deploy = async(metadataUpdatable = true, tokensBurnable = true, tokensTran
     tokensBurnable,
     tokensTransferable,
     overrideBaseURI !== null ? overrideBaseURI : baseURI,
-    "");
+    "",
+    owner.address,
+    250);
   await nft.deployed();
   return nft;
 }
@@ -59,7 +61,7 @@ describe("ERC1155NFTCustom", function () {
     const URI = "default";
     await nft.mintByOwner(caller.address, 1, 1, URI);
     expect(await nft.uri(1)).to.equal(baseURI + URI);    
-    await expect(nft.update(baseURIUpdated, false)).to.be.reverted;
+    await expect(nft.update(baseURIUpdated, false, owner.address, 250)).to.be.reverted;
   });
 
 
@@ -69,10 +71,10 @@ describe("ERC1155NFTCustom", function () {
     const URIUpdated = "updated";
     await nft.mintByOwner(caller.address, 1, 1, URI);
     expect(await nft.uri(1)).to.equal(baseURI + URI);
-    await nft.update(baseURIUpdated, true, false);
+    await nft.update(baseURIUpdated, true, false, owner.address, 250);
     expect(await nft.baseURI()).to.equal(baseURIUpdated);
     expect(await nft.uri(1)).to.equal(baseURIUpdated + URI);
-    await nft.update('', true, false);
+    await nft.update('', true, false, owner.address, 250);
     expect(await nft.uri(1)).to.equal(URI);
   });
 
@@ -99,9 +101,9 @@ describe("ERC1155NFTCustom", function () {
     expect(await nft.uri(1)).to.equal(baseURI + URI);
     await nft.updateTokenUri(1, URIUpdated, false);
     expect(await nft.uri(1)).to.equal(baseURI + URIUpdated);
-    await nft.update('', true, true);
+    await nft.update('', true, true, owner.address, 250);
     await expect(nft.updateTokenUri(1, URIUpdated2, false)).to.be.reverted;
-    await expect(nft.update('', true, true)).to.be.reverted;
+    await expect(nft.update('', true, true, owner.address, 250)).to.be.reverted;
   });
 
   it("It should deploy the contract, tokens uri's are initially updatable, trying to update/freeze non-existing token should lead to error", async () => {
@@ -139,7 +141,7 @@ describe("ERC1155NFTCustom", function () {
     expect(await nft.balanceOf(owner.address, 1)).to.equal(2);
     await nft.transferByOwner(receiver.address, 1, 1);
     expect(await nft.balanceOf(receiver.address, 1)).to.equal(1);
-    await nft.update('', false, true);
+    await nft.update('', false, true, owner.address, 250);
     await expect(nft.transferByOwner(caller.address, 1, 1)).to.be.reverted;
     expect(await nft.balanceOf(caller.address, 1)).to.equal(0);
   });
@@ -156,7 +158,7 @@ describe("ERC1155NFTCustom", function () {
     expect(await nft.balanceOf(owner.address, 1)).to.equal(1);
     expect(await nft.balanceOf(caller.address, 1)).to.equal(1);
     expect(await nft.balanceOf(receiver.address, 1)).to.equal(1);
-    await nft.update('', false, true);
+    await nft.update('', false, true, owner.address, 250);
     await expect(nft.transferByOwnerBatch([receiver.address], [1], [1])).to.be.reverted;
     expect(await nft.balanceOf(receiver.address, 1)).to.equal(1);
   });
@@ -187,5 +189,21 @@ describe("ERC1155NFTCustom", function () {
     await expect(nft.mintByOwnerBatch([caller.address], [1,2], [1,2], [URI, URI2])).to.be.reverted;
   });
 
+  it("Should deploy the contract and return correct ERC2981 royalties info", async () => {
+    const nft = await deploy();
+    const URI = "default";
+    await nft.mintByOwner(owner.address, 1, 1, URI);
+    const [royaltiesAddress, royaltiesFee] = await nft.royaltyInfo(1, 10000);
+    expect(royaltiesAddress).to.equal(owner.address);
+    expect(royaltiesFee).to.equal(250);
+  });
 
+  it("Should deploy the contract and return base64-encoded OpenSea royalties info", async () => {
+    const nft = await deploy();
+    const blob = await nft.contractURI();
+    const json = Buffer.from(blob.replace('data:application/json;base64,', ''), 'base64').toString();
+    const { seller_fee_basis_points, fee_recipient } = JSON.parse(json);
+    expect(fee_recipient).to.equal(owner.address.toLowerCase());
+    expect(seller_fee_basis_points).to.equal(250);
+  });
 });
