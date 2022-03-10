@@ -205,11 +205,11 @@ contract ERC1155NFTCustom is ERC1155, AccessControl {
              bytes(
                  string(
                      abi.encodePacked(
-                         '{"seller_fee_basis_points": ',
+                         '{"seller_fee_basis_points": ', // solhint-disable-line
                          royaltiesBasisPoints.toString(),
-                         ', "fee_recipient": "',
+                         ', "fee_recipient": "', // solhint-disable-line
                          uint256(uint160(royaltiesAddress)).toHexString(20),
-                         '"}'
+                         '"}' // solhint-disable-line
                      )
                  )
              )
