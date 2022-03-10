@@ -47,10 +47,10 @@ contract NftInjectableTokenIdRolesUpdatableBaseURI is ERC721URIStorage, AccessCo
         return _owner;
     }
 
-    function _baseURI() 
+    function _baseURI()
     internal
-    view 
-    virtual 
+    view
+    virtual
     override(ERC721)
     returns (string memory) {
         return baseURI;

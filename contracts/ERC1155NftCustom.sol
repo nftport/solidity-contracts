@@ -34,10 +34,10 @@ contract ERC1155NFTCustom is ERC1155, AccessControl {
     event PermanentURIGlobal();
 
     constructor(
-        string memory _name, 
-        string memory _symbol, 
-        address owner, 
-        bool _metadataUpdatable, 
+        string memory _name,
+        string memory _symbol,
+        address owner,
+        bool _metadataUpdatable,
         bool _tokensBurnable,
         bool _tokensTransferable,
         string memory _initBaseURI,
@@ -90,7 +90,7 @@ contract ERC1155NFTCustom is ERC1155, AccessControl {
         uint256 value
     ) public onlyRole(MINTER_ROLE) {
         require(tokensBurnable, "NFT: tokens burning is disabled");
-        
+
         _burn(_owner, id, value);
         tokenSupply[id] -= value;
     }
@@ -127,7 +127,7 @@ contract ERC1155NFTCustom is ERC1155, AccessControl {
     }
 
     function update(
-        string memory _newBaseURI, 
+        string memory _newBaseURI,
         bool _tokensTransferable,
         bool _freezeUpdates,
         address _royaltiesAddress,
@@ -138,7 +138,7 @@ contract ERC1155NFTCustom is ERC1155, AccessControl {
         baseURI = _newBaseURI;
         royaltiesAddress = _royaltiesAddress;
         royaltiesBasisPoints = _royaltiesBasisPoints;
-        
+
         if (!_tokensTransferable) {
             tokensTransferable = false;
         }
@@ -201,25 +201,28 @@ contract ERC1155NFTCustom is ERC1155, AccessControl {
     }
 
     function contractURI() external view returns (string memory) {
-         string memory json = Base64.encode(
-             bytes(
-                 string(
-                     abi.encodePacked(
-                         '{"seller_fee_basis_points": ', // solhint-disable-line
-                         royaltiesBasisPoints.toString(),
-                         ', "fee_recipient": "', // solhint-disable-line
-                         uint256(uint160(royaltiesAddress)).toHexString(20),
-                         '"}' // solhint-disable-line
-                     )
-                 )
-             )
-         );
+        string memory json = Base64.encode(
+            bytes(
+                string(
+                    abi.encodePacked(
+                        // solium-disable-next-line quotes
+                        '{"seller_fee_basis_points": ', // solhint-disable-line
+                        royaltiesBasisPoints.toString(),
+                        // solium-disable-next-line quotes
+                        ', "fee_recipient": "', // solhint-disable-line
+                        uint256(uint160(royaltiesAddress)).toHexString(20),
+                        // solium-disable-next-line quotes
+                        '"}' // solhint-disable-line
+                    )
+                )
+            )
+        );
 
-         string memory output = string(
-             abi.encodePacked("data:application/json;base64,", json)
-         );
+        string memory output = string(
+            abi.encodePacked("data:application/json;base64,", json)
+        );
 
-         return output;
+        return output;
     }
 
     function supportsInterface(bytes4 interfaceId) public view override(ERC1155, AccessControl) returns (bool)
