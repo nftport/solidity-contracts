@@ -7,7 +7,7 @@ import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
 import {IERC2981} from "@openzeppelin/contracts/token/common/ERC2981.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 
-import "./Base64.sol";
+import "./lib/Base64.sol";
 
 contract ERC721NFTCustom is ERC721URIStorage, AccessControl {
     using Strings for uint256;
@@ -21,7 +21,7 @@ contract ERC721NFTCustom is ERC721URIStorage, AccessControl {
     bool public tokensTransferable;
 
     // Mapping of individually frozen tokens
-    mapping (uint256 => bool) public freezeTokenUris;
+    mapping(uint256 => bool) public freezeTokenUris;
 
     // Mapping from owner to list of owned token IDs
     mapping(address => mapping(uint256 => uint256)) private _ownedTokens;
@@ -44,15 +44,15 @@ contract ERC721NFTCustom is ERC721URIStorage, AccessControl {
     event PermanentURIGlobal();
 
     constructor(
-            string memory _name,
-            string memory _symbol,
-            address owner,
-            bool _metadataUpdatable,
-            bool _tokensBurnable,
-            bool _tokensTransferable,
-            string memory _initBaseURI,
-            address _royaltiesAddress,
-            uint96 _royaltiesBasisPoints
+        string memory _name,
+        string memory _symbol,
+        address owner,
+        bool _metadataUpdatable,
+        bool _tokensBurnable,
+        bool _tokensTransferable,
+        string memory _initBaseURI,
+        address _royaltiesAddress,
+        uint96 _royaltiesBasisPoints
     ) ERC721(_name, _symbol) {
         _setupRole(DEFAULT_ADMIN_ROLE, owner);
         _setupRole(MINTER_ROLE, owner);
@@ -69,37 +69,39 @@ contract ERC721NFTCustom is ERC721URIStorage, AccessControl {
         _owner = owner;
     }
 
-    function mintToCaller(address caller, uint256 tokenId, string memory tokenURI)
-    public onlyRole(MINTER_ROLE)
-    returns (uint256)
-    {
+    function mintToCaller(
+        address caller,
+        uint256 tokenId,
+        string memory tokenURI
+    ) public onlyRole(MINTER_ROLE) returns (uint256) {
         _safeMint(caller, tokenId);
         _setTokenURI(tokenId, tokenURI);
         return tokenId;
     }
 
     function supportsInterface(bytes4 interfaceId)
-    public
-    view
-    override(ERC721, AccessControl)
-    returns (bool)
+        public
+        view
+        override(ERC721, AccessControl)
+        returns (bool)
     {
-        return ERC721.supportsInterface(interfaceId) || interfaceId == type(IERC2981).interfaceId;
+        return
+            ERC721.supportsInterface(interfaceId) ||
+            interfaceId == type(IERC2981).interfaceId;
     }
 
     function royaltyInfo(uint256 tokenId, uint256 salePrice)
-    external
-    view
-    returns (address, uint256)
+        external
+        view
+        returns (address, uint256)
     {
-        return (royaltiesAddress, royaltiesBasisPoints * salePrice / ROYALTIES_BASIS);
+        return (
+            royaltiesAddress,
+            (royaltiesBasisPoints * salePrice) / ROYALTIES_BASIS
+        );
     }
 
-    function contractURI()
-    external
-    view
-    returns (string memory)
-    {
+    function contractURI() external view returns (string memory) {
         string memory json = Base64.encode(
             bytes(
                 string(
@@ -129,25 +131,39 @@ contract ERC721NFTCustom is ERC721URIStorage, AccessControl {
     }
 
     function _baseURI()
-    internal
-    view
-    virtual
-    override(ERC721)
-    returns (string memory) {
+        internal
+        view
+        virtual
+        override(ERC721)
+        returns (string memory)
+    {
         return baseURI;
     }
 
-
-    function updateTokenUri(uint256 _tokenId, string memory _tokenUri, bool _isFreezeTokenUri)
-    public
-    onlyRole(MINTER_ROLE) {
-        require(_exists(_tokenId), "NFT: update URI query for nonexistent token");
+    function updateTokenUri(
+        uint256 _tokenId,
+        string memory _tokenUri,
+        bool _isFreezeTokenUri
+    ) public onlyRole(MINTER_ROLE) {
+        require(
+            _exists(_tokenId),
+            "NFT: update URI query for nonexistent token"
+        );
         require(metadataUpdatable, "NFT: Token uris are frozen globally");
         require(freezeTokenUris[_tokenId] != true, "NFT: Token is frozen");
-        require(_isFreezeTokenUri || (bytes(_tokenUri).length != 0), "NFT: Either _tokenUri or _isFreezeTokenUri=true required");
+        require(
+            _isFreezeTokenUri || (bytes(_tokenUri).length != 0),
+            "NFT: Either _tokenUri or _isFreezeTokenUri=true required"
+        );
 
         if (bytes(_tokenUri).length != 0) {
-            require(keccak256(bytes(tokenURI(_tokenId))) != keccak256(bytes(string(abi.encodePacked(_baseURI(), _tokenUri)))), "NFT: New token URI is same as updated");
+            require(
+                keccak256(bytes(tokenURI(_tokenId))) !=
+                    keccak256(
+                        bytes(string(abi.encodePacked(_baseURI(), _tokenUri)))
+                    ),
+                "NFT: New token URI is same as updated"
+            );
             _setTokenURI(_tokenId, _tokenUri);
         }
         if (_isFreezeTokenUri) {
@@ -156,19 +172,21 @@ contract ERC721NFTCustom is ERC721URIStorage, AccessControl {
         }
     }
 
-    function transferByOwner(
-        address _to,
-        uint256 _tokenId
-    ) public onlyRole(MINTER_ROLE) {
+    function transferByOwner(address _to, uint256 _tokenId)
+        public
+        onlyRole(MINTER_ROLE)
+    {
         require(tokensTransferable, "NFT: Transfers by owner are disabled");
         _safeTransfer(_owner, _to, _tokenId, "");
     }
 
-    function burn(uint256 _tokenId)
-    public onlyRole(MINTER_ROLE) {
+    function burn(uint256 _tokenId) public onlyRole(MINTER_ROLE) {
         require(tokensBurnable, "NFT: tokens burning is disabled");
         require(_exists(_tokenId), "Burn for nonexistent token");
-        require(ERC721.ownerOf(_tokenId) == _owner, "NFT: tokens may be burned by owner only");
+        require(
+            ERC721.ownerOf(_tokenId) == _owner,
+            "NFT: tokens may be burned by owner only"
+        );
         _burn(_tokenId);
     }
 
@@ -199,7 +217,12 @@ contract ERC721NFTCustom is ERC721URIStorage, AccessControl {
         return _allTokens.length;
     }
 
-    function tokenOfOwnerByIndex(address owner, uint256 index) public view virtual returns (uint256) {
+    function tokenOfOwnerByIndex(address owner, uint256 index)
+        public
+        view
+        virtual
+        returns (uint256)
+    {
         require(index < balanceOf(owner), "ERC721: owner index out of bounds");
         return _ownedTokens[owner][index];
     }
@@ -244,7 +267,9 @@ contract ERC721NFTCustom is ERC721URIStorage, AccessControl {
      * while the token is not assigned a new owner, the `_ownedTokensIndex` mapping is _not_ updated: this allows for
      * gas optimizations e.g. when performing a transfer operation (avoiding double writes).
      */
-    function _removeTokenFromOwnerEnumeration(address from, uint256 tokenId) private {
+    function _removeTokenFromOwnerEnumeration(address from, uint256 tokenId)
+        private
+    {
         // To prevent a gap in from's tokens array, we store the last token in the index of the token to delete, and
         // then delete the last slot (swap and pop).
 
