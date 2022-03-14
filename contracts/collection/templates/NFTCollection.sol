@@ -17,49 +17,49 @@ contract NFTCollection is ERC721, ERC2981, AccessControl, Initializable {
 
     /// Fixed at deployment time
     struct DeploymentConfig {
-        /// Name of the NFT contract.
+        // Name of the NFT contract.
         string name;
-        /// Symbol of the NFT contract.
+        // Symbol of the NFT contract.
         string symbol;
-        /// The contract owner address. If you wish to own the contract, then set it as your wallet address.
-        /// This is also the wallet that can manage the contract on NFT marketplaces. Use `transferOwnership()`
-        /// to update the contract owner.
+        // The contract owner address. If you wish to own the contract, then set it as your wallet address.
+        // This is also the wallet that can manage the contract on NFT marketplaces. Use `transferOwnership()`
+        // to update the contract owner.
         address owner;
-        /// The maximum number of tokens that can be minted in this collection.
+        // The maximum number of tokens that can be minted in this collection.
         uint256 maxSupply;
-        /// The number of free token mints reserved for the contract owner
+        // The number of free token mints reserved for the contract owner
         uint256 reservedSupply;
-        /// Minting price per token.
+        // Minting price per token.
         uint256 mintPrice;
-        /// The maximum number of tokens the user can mint per transaction.
+        // The maximum number of tokens the user can mint per transaction.
         uint256 tokensPerMint;
-        /// Treasury address is the address where minting fees can be withdrawn to.
-        /// Use `withdrawFees()` to transfer the entire contract balance to the treasury address.
+        // Treasury address is the address where minting fees can be withdrawn to.
+        // Use `withdrawFees()` to transfer the entire contract balance to the treasury address.
         address payable treasuryAddress;
     }
 
     /// Updatable by admins and owner
     struct RuntimeConfig {
-        /// Metadata base URI for tokens, NFTs minted in this contract will have metadata URI of `baseURI` + `tokenID`.
-        /// Set this to reveal token metadata.
+        // Metadata base URI for tokens, NFTs minted in this contract will have metadata URI of `baseURI` + `tokenID`.
+        // Set this to reveal token metadata.
         string baseURI;
-        /// If true, the base URI of the NFTs minted in the specified contract can be updated after minting (token URIs
-        /// are not frozen on the contract level). This is useful for revealing NFTs after the drop. If false, all the
-        /// NFTs minted in this contract are frozen by default which means token URIs are non-updatable.
+        // If true, the base URI of the NFTs minted in the specified contract can be updated after minting (token URIs
+        // are not frozen on the contract level). This is useful for revealing NFTs after the drop. If false, all the
+        // NFTs minted in this contract are frozen by default which means token URIs are non-updatable.
         bool metadataUpdatable;
-        /// Starting timestamp for public minting.
+        // Starting timestamp for public minting.
         uint256 publicMintStart;
-        /// Starting timestamp for whitelisted/presale minting.
+        // Starting timestamp for whitelisted/presale minting.
         uint256 presaleMintStart;
-        /// Pre-reveal token URI for placholder metadata. This will be returned for all token IDs until a `baseURI`
-        /// has been set.
+        // Pre-reveal token URI for placholder metadata. This will be returned for all token IDs until a `baseURI`
+        // has been set.
         string prerevealTokenURI;
-        /// Root of the Merkle tree of whitelisted addresses. This is used to check if a wallet has been whitelisted
-        /// for presale minting.
+        // Root of the Merkle tree of whitelisted addresses. This is used to check if a wallet has been whitelisted
+        // for presale minting.
         bytes32 presaleMerkleRoot;
-        /// Secondary market royalties in basis points (100 bps = 1%)
+        // Secondary market royalties in basis points (100 bps = 1%)
         uint256 royaltiesBps;
-        /// Address for royalties
+        // Address for royalties
         address royaltiesAddress;
     }
 
