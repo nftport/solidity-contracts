@@ -10,6 +10,8 @@ const ETHEREUM_PRIVATE_KEY_MAINNET = process.env.ETHEREUM_PRIVATE_KEY_MAINNET;
 require('hardhat-abi-exporter');
 require("solidity-coverage");
 require("@nomiclabs/hardhat-waffle");
+require('hardhat-deploy');
+require("@nomiclabs/hardhat-ethers");
 
 // This is a sample Hardhat task. To learn how to create your own go to
 // https://hardhat.org/guides/create-task.html
@@ -28,25 +30,25 @@ task("accounts", "Prints the list of accounts", async () => {
  * @type import('hardhat/config').HardhatUserConfig
  */
 module.exports = {
-  defaultNetwork: "matic",
   networks: {
-    localhost: {
-     url: "http://127.0.0.1:8546"
-    },
-    hardhat: {
-    },
-    matic: {
-      url: "https://rpc-mumbai.maticvigil.com",
-      accounts: [POLYGON_PRIVATE_KEY_MUMBAI]
-    },
-    maticMainnet: {
+    polygon: {
       url: "https://rpc-mainnet.maticvigil.com/",
-      accounts: [POLYGON_PRIVATE_KEY_MAINNET]
+      accounts: [POLYGON_PRIVATE_KEY_MAINNET],
+      etherscan: { apiKey: process.env.API_KEY_POLYGONSCAN },
     },
-    ethereumRinkeby: {
+    mumbai: {
+      url: "https://rpc-mumbai.maticvigil.com",
+      accounts: [POLYGON_PRIVATE_KEY_MUMBAI],
+      etherscan: { apiKey: process.env.API_KEY_POLYGONSCAN },
+    },
+    rinkeby: {
       url: RINKEBY_GATEWAY_URL,
-      accounts: [ETHEREUM_PRIVATE_KEY_RINKEBY]
+      accounts: [ETHEREUM_PRIVATE_KEY_RINKEBY],
+      etherscan: { apiKey: process.env.API_KEY_ETHERSCAN },
     }
+  },
+  namedAccounts: {
+    deployer: 0,
   },
   solidity: {
     version: "0.8.9",

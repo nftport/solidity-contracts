@@ -148,7 +148,7 @@ pipeline {
         {
           sh '''
           source activate $(head -1 environment.yml | cut -d' ' -f2)
-          mythx --yes analyze --mode quick contracts --remap-import "@openzeppelin/=$(pwd)/node_modules/@openzeppelin/" --swc-blacklist SWC-123
+          mythx --yes analyze --mode quick contracts --remap-import "@openzeppelin/=$(pwd)/node_modules/@openzeppelin/" --swc-blacklist SWC-123  --solc-version 0.8.9
           '''
         }
       }
@@ -167,7 +167,7 @@ pipeline {
         {
           sh '''
           source activate $(head -1 environment.yml | cut -d' ' -f2)
-          mythx --yes analyze --mode standard contracts --remap-import "@openzeppelin/=$(pwd)/node_modules/@openzeppelin/" --swc-blacklist SWC-123
+          mythx --yes analyze --mode standard contracts --remap-import "@openzeppelin/=$(pwd)/node_modules/@openzeppelin/" --swc-blacklist SWC-123  --solc-version 0.8.9
           '''
         }
       }
