@@ -7,7 +7,7 @@ import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
 import {IERC2981} from "@openzeppelin/contracts/token/common/ERC2981.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 
-import "./Base64.sol";
+import "./lib/Base64.sol";
 
 contract ERC721NFTCustom is ERC721URIStorage, AccessControl {
     using Strings for uint256;

@@ -6,7 +6,7 @@ import "@openzeppelin/contracts/access/AccessControl.sol";
 import {IERC2981} from "@openzeppelin/contracts/token/common/ERC2981.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 
-import "./Base64.sol";
+import "./lib/Base64.sol";
 
 contract ERC1155NFTCustom is ERC1155, AccessControl {
     using Strings for uint256;
