@@ -73,6 +73,7 @@ cp node_modules/@openzeppelin solidity-flattener/contracts/@openzeppelin
 ```
 #### Flatten solidity contract
 ```
+cd solidity-flattener
 npm start contract/contract.sol
 ```
 2) Open Contract on Polygonscan/rinkeby.etherscan.io , click Contract -> Verify and Publish
