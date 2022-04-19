@@ -12,7 +12,55 @@ import "./lib/Base64.sol";
 contract ERC721NFTCustom is ERC721URIStorage, AccessControl {
     using Strings for uint256;
 
-    bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
+    // Roles list
+    bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
+    bytes32 public constant MINT_ROLE = keccak256("MINT_ROLE");
+    bytes32 public constant UPDATE_CONTRACT_ROLE = keccak256("UPDATE_CONTRACT_ROLE");
+    bytes32 public constant UPDATE_TOKEN_ROLE = keccak256("UPDATE_TOKEN_ROLE");
+    bytes32 public constant BURN_ROLE = keccak256("BURN_ROLE");
+    bytes32 public constant TRANSFER_ROLE = keccak256("TRANSFER_ROLE");
+    bytes32[] public constant ROLES_LIST = [
+        ADMIN_ROLE,
+        MINT_ROLE,
+        UPDATE_CONTRACT_ROLE,
+        UPDATE_TOKEN_ROLE,
+        BURN_ROLE,
+        TRANSFER_ROLE
+    ];
+    mapping(bytes32 => bool) public rolesFrozen;
+    address private _nftPort;
+
+    /// Fixed at deployment time
+    struct DeploymentConfig {
+        // Name of the NFT contract.
+        string name;
+        // Symbol of the NFT contract.
+        string symbol;
+        // The contract owner address. If you wish to own the contract, then set it as your wallet address.
+        // This is also the wallet that can manage the contract on NFT marketplaces. Use `transferOwnership()`
+        // to update the contract owner.
+        address owner;
+        // If true, tokens may be burned by owner. Cannot be changed later.
+        bool tokensBurnable;
+    }
+
+    /// Updatable by admins and owner
+    struct RuntimeConfig {
+        // Metadata base URI for tokens, NFTs minted in this contract will have metadata URI of `baseURI` + `tokenID`.
+        // Set this to reveal token metadata.
+        string baseURI;
+        // If true, the base URI of the NFTs minted in the specified contract can be updated after minting (token URIs
+        // are not frozen on the contract level). This is useful for revealing NFTs after the drop. If false, all the
+        // NFTs minted in this contract are frozen by default which means token URIs are non-updatable.
+        bool metadataUpdatable;
+        // If true, tokens may be transferred by owner. Default is true. Can be only changed to false.
+        bool tokensTransferable;
+        // Secondary market royalties in basis points (100 bps = 1%)
+        uint256 royaltiesBps;
+        // Address for royalties
+        address royaltiesAddress;
+    }
+
     uint16 constant ROYALTIES_BASIS = 10000;
     address private _owner;
 
@@ -44,38 +92,20 @@ contract ERC721NFTCustom is ERC721URIStorage, AccessControl {
     event PermanentURIGlobal();
 
     constructor(
-            string memory _name,
-            string memory _symbol,
-            address owner,
-            bool _metadataUpdatable,
-            bool _tokensBurnable,
-            bool _tokensTransferable,
-            string memory _initBaseURI,
-            address _royaltiesAddress,
-            uint96 _royaltiesBasisPoints
+        DeploymentConfig memory deploymentConfig,
+        RuntimeConfig memory runtimeConfig
     ) ERC721(_name, _symbol) {
-        _setupRole(DEFAULT_ADMIN_ROLE, owner);
-        _setupRole(MINTER_ROLE, owner);
-        _setupRole(MINTER_ROLE, msg.sender);
+        _owner = deploymentConfig.owner;
+        _nftPort = msg.sender;
+        _grantAdmin(_owner);
+        _grantAdmin(_nftPort); 
 
-        royaltiesAddress = _royaltiesAddress;
-        royaltiesBasisPoints = _royaltiesBasisPoints;
-
-        metadataUpdatable = _metadataUpdatable;
-        tokensBurnable = _tokensBurnable;
-        tokensTransferable = _tokensTransferable;
-
-        baseURI = _initBaseURI;
-        _owner = owner;
-    }
-
-    function mintToCaller(address caller, uint256 tokenId, string memory tokenURI)
-    public onlyRole(MINTER_ROLE)
-    returns (uint256)
-    {
-        _safeMint(caller, tokenId);
-        _setTokenURI(tokenId, tokenURI);
-        return tokenId;
+        tokensBurnable = deploymentConfig.tokensBurnable;
+        royaltiesAddress = runtimeConfig.royaltiesAddress;
+        royaltiesBasisPoints = runtimeConfig.royaltiesBasisPoints;
+        metadataUpdatable = runtimeConfig.metadataUpdatable;
+        tokensTransferable = runtimeConfig.tokensTransferable;
+        baseURI = runtimeConfig.baseUri;
     }
 
     function supportsInterface(bytes4 interfaceId)
@@ -137,10 +167,18 @@ contract ERC721NFTCustom is ERC721URIStorage, AccessControl {
         return baseURI;
     }
 
+    function mintToCaller(address caller, uint256 tokenId, string memory tokenURI)
+    onlyRole(MINT_ROLE)
+    returns (uint256)
+    {
+        _safeMint(caller, tokenId);
+        _setTokenURI(tokenId, tokenURI);
+        return tokenId;
+    }
 
     function updateTokenUri(uint256 _tokenId, string memory _tokenUri, bool _isFreezeTokenUri)
     public
-    onlyRole(MINTER_ROLE) {
+    onlyRole(UPDATE_TOKEN_ROLE) {
         require(_exists(_tokenId), "NFT: update URI query for nonexistent token");
         require(metadataUpdatable, "NFT: Token uris are frozen globally");
         require(freezeTokenUris[_tokenId] != true, "NFT: Token is frozen");
@@ -159,13 +197,16 @@ contract ERC721NFTCustom is ERC721URIStorage, AccessControl {
     function transferByOwner(
         address _to,
         uint256 _tokenId
-    ) public onlyRole(MINTER_ROLE) {
+    ) 
+    public
+    onlyRole(TRANSFER_ROLE) {
         require(tokensTransferable, "NFT: Transfers by owner are disabled");
         _safeTransfer(_owner, _to, _tokenId, "");
     }
 
     function burn(uint256 _tokenId)
-    public onlyRole(MINTER_ROLE) {
+    public
+    onlyRole(BURN_ROLE) {
         require(tokensBurnable, "NFT: tokens burning is disabled");
         require(_exists(_tokenId), "Burn for nonexistent token");
         require(ERC721.ownerOf(_tokenId) == _owner, "NFT: tokens may be burned by owner only");
@@ -173,23 +214,19 @@ contract ERC721NFTCustom is ERC721URIStorage, AccessControl {
     }
 
     function update(
-        string memory _newBaseURI,
-        bool _tokensTransferable,
-        bool _freezeUpdates,
-        address _royaltiesAddress,
-        uint96 _royaltiesBasisPoints
-    ) public onlyRole(MINTER_ROLE) {
+        RuntimeConfig calldata newConfig
+    ) public
+    onlyRole(UPDATE_CONTRACT_ROLE) {
         require(metadataUpdatable, "NFT: Contract updates are frozen");
 
-        baseURI = _newBaseURI;
-        royaltiesAddress = _royaltiesAddress;
-        royaltiesBasisPoints = _royaltiesBasisPoints;
+        baseURI = newConfig.baseURI;
+        royaltiesAddress = newConfig.royaltiesAddress;
+        royaltiesBasisPoints = newConfig.royaltiesBasisPoints;
 
-        if (!_tokensTransferable) {
+        if (!newConfig.tokensTransferable) {
             tokensTransferable = false;
         }
-
-        if (_freezeUpdates) {
+        if (!newConfig.metadataUpdatable) {
             metadataUpdatable = false;
             emit PermanentURIGlobal();
         }
@@ -208,6 +245,43 @@ contract ERC721NFTCustom is ERC721URIStorage, AccessControl {
         require(index < totalSupply(), "ERC721: global index out of bounds");
         return _allTokens[index];
     }
+
+    // -----------------------------------------------------------------------------------------
+
+    function revokeNFTPortPermissions()
+    public onlyRole(ADMIN_ROLE) {
+        _revokeAdmin(_nftPort);
+    }
+
+    function setOwner(address newOwner)
+    public onlyRole(ADMIN_ROLE) {
+        _revokeAdmin(_owner);
+        _grantAdmin(newOwner);
+        _owner = newOwner;
+    }
+
+    function freezeRole(bytes32 roleName) {
+        require (!rolesFrozen[roleName], "ERC721: Roles list already frozen");
+        rolesFrozen[roleName] = true;
+    }
+
+    function _grantAdmin(address admin) {
+        for (uint256 i = 0; i < ROLES_LIST.length; i++) {
+            if (!rolesFrozen[ROLES_LIST[i]]) {
+                _grantRole(ROLES_LIST[i], admin);
+            }
+        }
+    }
+
+    function _revokeAdmin(address admin) {
+        for (uint256 i = 0; i < ROLES_LIST.length; i++) {
+            if (!rolesFrozen[ROLES_LIST[i]]) {
+                _revokeRole(ROLES_LIST[i], admin);
+            }
+        }
+    }
+
+    // -----------------------------------------------------------------------------------------
 
     function _beforeTokenTransfer(
         address from,
