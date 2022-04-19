@@ -2,49 +2,63 @@
   {
     "inputs": [
       {
-        "internalType": "string",
-        "name": "_name",
-        "type": "string"
+        "components": [
+          {
+            "internalType": "string",
+            "name": "name",
+            "type": "string"
+          },
+          {
+            "internalType": "string",
+            "name": "symbol",
+            "type": "string"
+          },
+          {
+            "internalType": "address",
+            "name": "owner",
+            "type": "address"
+          },
+          {
+            "internalType": "bool",
+            "name": "tokensBurnable",
+            "type": "bool"
+          }
+        ],
+        "internalType": "struct ERC721NFTCustom.DeploymentConfig",
+        "name": "deploymentConfig",
+        "type": "tuple"
       },
       {
-        "internalType": "string",
-        "name": "_symbol",
-        "type": "string"
-      },
-      {
-        "internalType": "address",
-        "name": "owner",
-        "type": "address"
-      },
-      {
-        "internalType": "bool",
-        "name": "_metadataUpdatable",
-        "type": "bool"
-      },
-      {
-        "internalType": "bool",
-        "name": "_tokensBurnable",
-        "type": "bool"
-      },
-      {
-        "internalType": "bool",
-        "name": "_tokensTransferable",
-        "type": "bool"
-      },
-      {
-        "internalType": "string",
-        "name": "_initBaseURI",
-        "type": "string"
-      },
-      {
-        "internalType": "address",
-        "name": "_royaltiesAddress",
-        "type": "address"
-      },
-      {
-        "internalType": "uint96",
-        "name": "_royaltiesBasisPoints",
-        "type": "uint96"
+        "components": [
+          {
+            "internalType": "string",
+            "name": "baseURI",
+            "type": "string"
+          },
+          {
+            "internalType": "bool",
+            "name": "metadataUpdatable",
+            "type": "bool"
+          },
+          {
+            "internalType": "bool",
+            "name": "tokensTransferable",
+            "type": "bool"
+          },
+          {
+            "internalType": "uint256",
+            "name": "royaltiesBps",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "royaltiesAddress",
+            "type": "address"
+          }
+        ],
+        "internalType": "struct ERC721NFTCustom.RuntimeConfig",
+        "name": "runtimeConfig",
+        "type": "tuple"
       }
     ],
     "stateMutability": "nonpayable",
@@ -227,6 +241,32 @@
   },
   {
     "inputs": [],
+    "name": "ADMIN_ROLE",
+    "outputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "BURN_ROLE",
+    "outputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
     "name": "DEFAULT_ADMIN_ROLE",
     "outputs": [
       {
@@ -240,7 +280,65 @@
   },
   {
     "inputs": [],
-    "name": "MINTER_ROLE",
+    "name": "MINT_ROLE",
+    "outputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "name": "ROLES_LIST",
+    "outputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "TRANSFER_ROLE",
+    "outputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "UPDATE_CONTRACT_ROLE",
+    "outputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "UPDATE_TOKEN_ROLE",
     "outputs": [
       {
         "internalType": "bytes32",
@@ -325,6 +423,19 @@
       }
     ],
     "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "roleName",
+        "type": "bytes32"
+      }
+    ],
+    "name": "freezeRole",
+    "outputs": [],
+    "stateMutability": "nonpayable",
     "type": "function"
   },
   {
@@ -556,6 +667,13 @@
     "type": "function"
   },
   {
+    "inputs": [],
+    "name": "revokeNFTPortPermissions",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
     "inputs": [
       {
         "internalType": "bytes32",
@@ -571,6 +689,25 @@
     "name": "revokeRole",
     "outputs": [],
     "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      }
+    ],
+    "name": "rolesFrozen",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
     "type": "function"
   },
   {
@@ -693,6 +830,19 @@
       }
     ],
     "name": "setApprovalForAll",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "newOwner",
+        "type": "address"
+      }
+    ],
+    "name": "setOwner",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -874,29 +1024,36 @@
   {
     "inputs": [
       {
-        "internalType": "string",
-        "name": "_newBaseURI",
-        "type": "string"
-      },
-      {
-        "internalType": "bool",
-        "name": "_tokensTransferable",
-        "type": "bool"
-      },
-      {
-        "internalType": "bool",
-        "name": "_freezeUpdates",
-        "type": "bool"
-      },
-      {
-        "internalType": "address",
-        "name": "_royaltiesAddress",
-        "type": "address"
-      },
-      {
-        "internalType": "uint96",
-        "name": "_royaltiesBasisPoints",
-        "type": "uint96"
+        "components": [
+          {
+            "internalType": "string",
+            "name": "baseURI",
+            "type": "string"
+          },
+          {
+            "internalType": "bool",
+            "name": "metadataUpdatable",
+            "type": "bool"
+          },
+          {
+            "internalType": "bool",
+            "name": "tokensTransferable",
+            "type": "bool"
+          },
+          {
+            "internalType": "uint256",
+            "name": "royaltiesBps",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "royaltiesAddress",
+            "type": "address"
+          }
+        ],
+        "internalType": "struct ERC721NFTCustom.RuntimeConfig",
+        "name": "newConfig",
+        "type": "tuple"
       }
     ],
     "name": "update",

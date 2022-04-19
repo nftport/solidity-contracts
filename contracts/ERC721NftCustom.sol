@@ -19,7 +19,7 @@ contract ERC721NFTCustom is ERC721URIStorage, AccessControl {
     bytes32 public constant UPDATE_TOKEN_ROLE = keccak256("UPDATE_TOKEN_ROLE");
     bytes32 public constant BURN_ROLE = keccak256("BURN_ROLE");
     bytes32 public constant TRANSFER_ROLE = keccak256("TRANSFER_ROLE");
-    bytes32[] public constant ROLES_LIST = [
+    bytes32[] public ROLES_LIST = [
         ADMIN_ROLE,
         MINT_ROLE,
         UPDATE_CONTRACT_ROLE,
@@ -94,7 +94,7 @@ contract ERC721NFTCustom is ERC721URIStorage, AccessControl {
     constructor(
         DeploymentConfig memory deploymentConfig,
         RuntimeConfig memory runtimeConfig
-    ) ERC721(_name, _symbol) {
+    ) ERC721(deploymentConfig.name, deploymentConfig.symbol) {
         _owner = deploymentConfig.owner;
         _nftPort = msg.sender;
         _grantAdmin(_owner);
@@ -102,10 +102,11 @@ contract ERC721NFTCustom is ERC721URIStorage, AccessControl {
 
         tokensBurnable = deploymentConfig.tokensBurnable;
         royaltiesAddress = runtimeConfig.royaltiesAddress;
-        royaltiesBasisPoints = runtimeConfig.royaltiesBasisPoints;
+
+        royaltiesBasisPoints = runtimeConfig.royaltiesBps;
         metadataUpdatable = runtimeConfig.metadataUpdatable;
         tokensTransferable = runtimeConfig.tokensTransferable;
-        baseURI = runtimeConfig.baseUri;
+        baseURI = runtimeConfig.baseURI;
     }
 
     function supportsInterface(bytes4 interfaceId)
@@ -168,6 +169,7 @@ contract ERC721NFTCustom is ERC721URIStorage, AccessControl {
     }
 
     function mintToCaller(address caller, uint256 tokenId, string memory tokenURI)
+    public
     onlyRole(MINT_ROLE)
     returns (uint256)
     {
@@ -221,7 +223,7 @@ contract ERC721NFTCustom is ERC721URIStorage, AccessControl {
 
         baseURI = newConfig.baseURI;
         royaltiesAddress = newConfig.royaltiesAddress;
-        royaltiesBasisPoints = newConfig.royaltiesBasisPoints;
+        royaltiesBasisPoints = newConfig.royaltiesBps;
 
         if (!newConfig.tokensTransferable) {
             tokensTransferable = false;
@@ -253,19 +255,24 @@ contract ERC721NFTCustom is ERC721URIStorage, AccessControl {
         _revokeAdmin(_nftPort);
     }
 
-    function setOwner(address newOwner)
-    public onlyRole(ADMIN_ROLE) {
+    function setOwner(
+        address newOwner
+    ) public onlyRole(ADMIN_ROLE) {
         _revokeAdmin(_owner);
         _grantAdmin(newOwner);
         _owner = newOwner;
     }
 
-    function freezeRole(bytes32 roleName) {
+    function freezeRole(
+        bytes32 roleName
+    ) public onlyRole(ADMIN_ROLE) {
         require (!rolesFrozen[roleName], "ERC721: Roles list already frozen");
         rolesFrozen[roleName] = true;
     }
 
-    function _grantAdmin(address admin) {
+    function _grantAdmin(
+        address admin
+    ) private {
         for (uint256 i = 0; i < ROLES_LIST.length; i++) {
             if (!rolesFrozen[ROLES_LIST[i]]) {
                 _grantRole(ROLES_LIST[i], admin);
@@ -273,7 +280,9 @@ contract ERC721NFTCustom is ERC721URIStorage, AccessControl {
         }
     }
 
-    function _revokeAdmin(address admin) {
+    function _revokeAdmin(
+        address admin
+    ) private {
         for (uint256 i = 0; i < ROLES_LIST.length; i++) {
             if (!rolesFrozen[ROLES_LIST[i]]) {
                 _revokeRole(ROLES_LIST[i], admin);
