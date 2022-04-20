@@ -59,6 +59,8 @@ contract ERC721NFTCustom is ERC721URIStorage, AccessControl {
         uint256 royaltiesBps;
         // Address for royalties
         address royaltiesAddress;
+        // List of secondary (non-admin) roles; can be empty
+//        mapping(bytes32 => address[]) permissions;
     }
 
     uint16 constant ROYALTIES_BASIS = 10000;

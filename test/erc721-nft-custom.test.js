@@ -18,7 +18,7 @@ const deploy = async(metadataUpdatable = true, tokensBurnable = true, tokensTran
   const deploymentConfig = {
     name: "NFTPort",
     symbol: "NFT",
-    owner: owner.address,
+    owner: admin_role.address,
     tokensBurnable
   }
   
@@ -27,7 +27,7 @@ const deploy = async(metadataUpdatable = true, tokensBurnable = true, tokensTran
     metadataUpdatable,
     tokensTransferable,
     royaltiesBps: 250,
-    royaltiesAddress: owner.address
+    royaltiesAddress: admin_role.address
   }
 
   const nft = await NFT.deploy(
@@ -41,7 +41,16 @@ const deploy = async(metadataUpdatable = true, tokensBurnable = true, tokensTran
 describe("ERC721NFTCustom", function () {
 
   beforeEach(async () => {
-    [owner, caller, receiver] = await ethers.getSigners();
+    [
+      caller,
+      receiver,
+      admin_role,
+      mint_role,
+      update_contract_role,
+      update_token_role,
+      burn_role,
+      transfer_role
+    ] = await ethers.getSigners();
   });
 
   it("It should deploy the contract, mint a token, and resolve to the right URI", async () => {
@@ -51,6 +60,14 @@ describe("ERC721NFTCustom", function () {
     expect(await nft.tokenURI(1)).to.equal(baseURI + URI)
   });
 
+  it("It should deploy the contract, revoke NFTPort permission, then mint a token should fail", async () => {
+    const nft = await deploy();
+    const URI = "QmWJBNeQAm9Rh4YaW8GFRnSgwa4dN889VKm9poc2DQPBkv";
+    await nft.mintToCaller(caller.address, 1, URI);
+    await nft.revokeNFTPortPermissions();
+    await expect(nft.mintToCaller(caller.address, 1, URI)).to.be.reverted;
+  });
+  
   it("It should deploy the contract, with correct name and symbol, all options are false", async () => {
     const nft = await deploy(false, false, false);
     expect(await nft.name()).to.equal("NFTPort");
@@ -81,7 +98,7 @@ describe("ERC721NFTCustom", function () {
         metadataUpdatable: false,
         tokensTransferable: true,
         royaltiesBps: 250,
-        royaltiesAddress: owner.address
+        royaltiesAddress: admin_role.address
     })).to.be.reverted;
   });
 
@@ -97,7 +114,7 @@ describe("ERC721NFTCustom", function () {
       metadataUpdatable: true,
       tokensTransferable: false,
       royaltiesBps: 250,
-      royaltiesAddress: owner.address
+      royaltiesAddress: admin_role.address
     });
     expect(await nft.baseURI()).to.equal(baseURIUpdated);
     expect(await nft.tokenURI(1)).to.equal(baseURIUpdated + URI);
@@ -106,7 +123,7 @@ describe("ERC721NFTCustom", function () {
       metadataUpdatable: true,
       tokensTransferable: false,
       royaltiesBps: 250,
-      royaltiesAddress: owner.address
+      royaltiesAddress: admin_role.address
     });
     expect(await nft.tokenURI(1)).to.equal(URI);
   });
@@ -139,7 +156,7 @@ describe("ERC721NFTCustom", function () {
       metadataUpdatable: false,
       tokensTransferable: true,
       royaltiesBps: 250,
-      royaltiesAddress: owner.address
+      royaltiesAddress: admin_role.address
     });
     await expect(nft.updateTokenUri(1, URIUpdated2, false)).to.be.reverted;
     await expect(nft.update({
@@ -147,7 +164,7 @@ describe("ERC721NFTCustom", function () {
       metadataUpdatable: false,
       tokensTransferable: true,
       royaltiesBps: 250,
-      royaltiesAddress: owner.address
+      royaltiesAddress: admin_role.address
     })).to.be.reverted;
   });
 
@@ -161,7 +178,7 @@ describe("ERC721NFTCustom", function () {
   it("It should deploy the contract, mint token, burn it by owner, then trying to update/freeze non-existing token should lead to error, burn is possible once", async () => {
     const nft = await deploy();
     const URI = "default";
-    await nft.mintToCaller(owner.address, 1, URI);
+    await nft.mintToCaller(admin_role.address, 1, URI);
     expect(await nft.tokenURI(1)).to.equal(baseURI + URI);
     await expect(nft.connect(receiver).burn(1)).to.be.reverted;
     await nft.burn(1);
@@ -173,7 +190,7 @@ describe("ERC721NFTCustom", function () {
     const nft = await deploy();
     const URI = "default";
     expect(await nft.totalSupply()).to.equal(0);
-    await nft.mintToCaller(owner.address, 1, URI);
+    await nft.mintToCaller(admin_role.address, 1, URI);
     expect(await nft.totalSupply()).to.equal(1);
     await nft.burn(1);
     expect(await nft.totalSupply()).to.equal(0);
@@ -183,13 +200,13 @@ describe("ERC721NFTCustom", function () {
     const nft = await deploy();
     const URI = "default";
     expect(await nft.totalSupply()).to.equal(0);
-    await nft.mintToCaller(owner.address, 12345, URI);
-    expect(await nft.tokenOfOwnerByIndex(owner.address, 0)).to.equal(12345);
+    await nft.mintToCaller(admin_role.address, 12345, URI);
+    expect(await nft.tokenOfOwnerByIndex(admin_role.address, 0)).to.equal(12345);
     expect(await nft.tokenByIndex(0)).to.equal(12345);
-    await expect(nft.tokenOfOwnerByIndex(owner.address, 1)).to.be.reverted;
+    await expect(nft.tokenOfOwnerByIndex(admin_role.address, 1)).to.be.reverted;
     await expect(nft.tokenByIndex(1)).to.be.reverted;
     await nft.burn(12345);
-    await expect(nft.tokenOfOwnerByIndex(owner.address, 0)).to.be.reverted;
+    await expect(nft.tokenOfOwnerByIndex(admin_role.address, 0)).to.be.reverted;
     await expect(nft.tokenByIndex(0)).to.be.reverted;
   });
 
@@ -197,8 +214,8 @@ describe("ERC721NFTCustom", function () {
   it("It should deploy the contract, tokens are transferable, transfer, then update to non-transferable, transfer should fail", async () => {
     const nft = await deploy();
     const URI = "default";
-    await nft.mintToCaller(owner.address, 1, URI);
-    expect(await nft.ownerOf(1)).to.equal(owner.address);
+    await nft.mintToCaller(admin_role.address, 1, URI);
+    expect(await nft.ownerOf(1)).to.equal(admin_role.address);
     await nft.transferByOwner(receiver.address, 1);
     expect(await nft.ownerOf(1)).to.equal(receiver.address);
     await nft.update({
@@ -206,19 +223,19 @@ describe("ERC721NFTCustom", function () {
       metadataUpdatable: true,
       tokensTransferable: false,
       royaltiesBps: 250,
-      royaltiesAddress: owner.address
+      royaltiesAddress: admin_role.address
     });
-    await nft.mintToCaller(owner.address, 2, URI);
+    await nft.mintToCaller(admin_role.address, 2, URI);
     await expect(nft.transferByOwner(receiver.address, 2)).to.be.reverted;
-    expect(await nft.ownerOf(2)).to.equal(owner.address);
+    expect(await nft.ownerOf(2)).to.equal(admin_role.address);
   });
 
   it("Should deploy the contract and return correct ERC2981 royalties info", async () => {
     const nft = await deploy();
     const URI = "default";
-    await nft.mintToCaller(owner.address, 1, URI);
+    await nft.mintToCaller(admin_role.address, 1, URI);
     const [royaltiesAddress, royaltiesFee] = await nft.royaltyInfo(1, 10000);
-    expect(royaltiesAddress).to.equal(owner.address);
+    expect(royaltiesAddress).to.equal(admin_role.address);
     expect(royaltiesFee).to.equal(250);
   });
 
@@ -227,7 +244,7 @@ describe("ERC721NFTCustom", function () {
     const blob = await nft.contractURI();
     const json = Buffer.from(blob.replace('data:application/json;base64,', ''), 'base64').toString();
     const { seller_fee_basis_points, fee_recipient } = JSON.parse(json);
-    expect(fee_recipient).to.equal(owner.address.toLowerCase());
+    expect(fee_recipient).to.equal(admin_role.address.toLowerCase());
     expect(seller_fee_basis_points).to.equal(250);
   });
 });
