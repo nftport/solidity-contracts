@@ -18,6 +18,7 @@
     "hardhat": "^2.6.5",
     "hardhat-abi-exporter": "^2.3.0",
     "hardhat-deploy": "^0.10.5",
+    "keccak256": "^1.0.6",
     "solidity-coverage": "^0.7.17"
   },
   "dependencies": {

@@ -1,28 +1,40 @@
 const {expect} = require("chai");
+const keccak256 = require("keccak256");
 
 const baseURI = "ipfs://";
 const baseURIUpdated = "https://someipfs.com/mockhash/";
 
-// bytes32[] public ROLES_LIST = [
-//   ADMIN_ROLE,
-//   MINT_ROLE,
-//   UPDATE_CONTRACT_ROLE,
-//   UPDATE_TOKEN_ROLE,
-//   BURN_ROLE,
-//   TRANSFER_ROLE
-// ];
+const roles = {
+  ADMIN_ROLE: keccak256("ADMIN_ROLE"),
+  MINT_ROLE: keccak256("MINT_ROLE"),
+  UPDATE_CONTRACT_ROLE: keccak256("UPDATE_CONTRACT_ROLE"),
+  UPDATE_TOKEN_ROLE: keccak256("UPDATE_TOKEN_ROLE"),
+  BURN_ROLE: keccak256("BURN_ROLE"),
+  TRANSFER_ROLE: keccak256("TRANSFER_ROLE")
+}
 
 const deploy = async(metadataUpdatable = true, tokensBurnable = true, tokensTransferable = true, overrideBaseURI = null) => {
-  const [owner] = await ethers.getSigners();
+    [
+      caller,
+      receiver,
+      admin_role,
+      mint_role,
+      mint2_role,
+      update_contract_role,
+      update_token_role,
+      burn_role,
+      transfer_role,
+      thirdparty
+    ] = await ethers.getSigners();
   const NFT = await ethers.getContractFactory("ERC721NFTCustom");
   const deploymentConfig = {
     name: "NFTPort",
     symbol: "NFT",
-    owner: admin_role.address,
     tokensBurnable
   }
   
   const runtimeConfig = {
+    owner: admin_role.address,
     baseURI: overrideBaseURI !== null ? overrideBaseURI : baseURI,
     metadataUpdatable,
     tokensTransferable,
@@ -30,9 +42,38 @@ const deploy = async(metadataUpdatable = true, tokensBurnable = true, tokensTran
     royaltiesAddress: admin_role.address
   }
 
+  const rolesAddresses = [
+    {
+      role: roles.MINT_ROLE,
+      addresses: [mint_role.address, mint2_role.address],
+      frozen: false
+    },
+    {
+      role: roles.UPDATE_CONTRACT_ROLE,
+      addresses: [update_contract_role.address],
+      frozen: false
+    },
+    {
+      role: roles.UPDATE_TOKEN_ROLE,
+      addresses: [update_token_role.address],
+      frozen: false
+    },
+    {
+      role: roles.BURN_ROLE,
+      addresses: [burn_role.address],
+      frozen: false
+    },
+    {
+      role: roles.TRANSFER_ROLE,
+      addresses: [transfer_role.address],
+      frozen: true
+    }
+  ]
+
   const nft = await NFT.deploy(
     deploymentConfig,
-    runtimeConfig
+    runtimeConfig,
+    rolesAddresses
   );
   await nft.deployed();
   return nft;
@@ -53,14 +94,23 @@ describe("ERC721NFTCustom", function () {
     ] = await ethers.getSigners();
   });
 
-  it("It should deploy the contract, mint a token, and resolve to the right URI", async () => {
+  it("It should deploy the contract, mint a token, and resolve to the right URI, mint from wrong roles should fail", async () => {
     const nft = await deploy();
     const URI = "QmWJBNeQAm9Rh4YaW8GFRnSgwa4dN889VKm9poc2DQPBkv";
     await nft.mintToCaller(caller.address, 1, URI);
+    await nft.connect(admin_role).mintToCaller(caller.address, 2, URI);
+    await nft.connect(mint_role).mintToCaller(caller.address, 3, URI);
     expect(await nft.tokenURI(1)).to.equal(baseURI + URI)
+    expect(await nft.tokenURI(2)).to.equal(baseURI + URI)
+    expect(await nft.tokenURI(3)).to.equal(baseURI + URI)
+    await expect(nft.connect(update_contract_role).mintToCaller(caller.address, 1, URI)).to.be.reverted;
+    await expect(nft.connect(update_token_role).mintToCaller(caller.address, 1, URI)).to.be.reverted;
+    await expect(nft.connect(burn_role).mintToCaller(caller.address, 1, URI)).to.be.reverted;
+    await expect(nft.connect(transfer_role).mintToCaller(caller.address, 1, URI)).to.be.reverted;
+    await expect(nft.connect(thirdparty).mintToCaller(caller.address, 1, URI)).to.be.reverted;
   });
 
-  it("It should deploy the contract, revoke NFTPort permission, then mint a token should fail", async () => {
+  it("It should deploy the contract, revoke NFTPort permission, then mint a token from NFTPort should fail", async () => {
     const nft = await deploy();
     const URI = "QmWJBNeQAm9Rh4YaW8GFRnSgwa4dN889VKm9poc2DQPBkv";
     await nft.mintToCaller(caller.address, 1, URI);
@@ -94,52 +144,69 @@ describe("ERC721NFTCustom", function () {
     await nft.mintToCaller(caller.address, 1, URI);
     expect(await nft.tokenURI(1)).to.equal(baseURI + URI);    
     await expect(nft.update({
+        owner: admin_role.address,
         baseURI: baseURIUpdated,
         metadataUpdatable: false,
         tokensTransferable: true,
         royaltiesBps: 250,
         royaltiesAddress: admin_role.address
-    })).to.be.reverted;
+    }, [])).to.be.reverted;
   });
 
 
-  it("It should deploy the contract, tokens uri's are initially updatable, mint token, update baseURI, check new token URI, empty baseURI is ok too", async () => {
+  it("It should deploy the contract, tokens uri's are initially updatable, mint token, update baseURI, check new token URI, empty baseURI is ok too; try different roles", async () => {
     const nft = await deploy();
     const URI = "default";
     const URIUpdated = "updated";
     await nft.mintToCaller(caller.address, 1, URI);
     expect(await nft.tokenURI(1)).to.equal(baseURI + URI);
-    await nft.update({
+    const updateInput = {
+      owner: admin_role.address,
       baseURI: baseURIUpdated,
       metadataUpdatable: true,
       tokensTransferable: false,
       royaltiesBps: 250,
       royaltiesAddress: admin_role.address
-    });
+    }
+    await nft.update(updateInput, []);
     expect(await nft.baseURI()).to.equal(baseURIUpdated);
     expect(await nft.tokenURI(1)).to.equal(baseURIUpdated + URI);
-    await nft.update({
-      baseURI: "",
-      metadataUpdatable: true,
-      tokensTransferable: false,
-      royaltiesBps: 250,
-      royaltiesAddress: admin_role.address
-    });
+    await nft.connect(admin_role).update(updateInput, []);
+    await nft.connect(update_contract_role).update(updateInput, []);
+    await expect(nft.connect(mint_role).update(updateInput, [])).to.be.reverted;
+    await expect(nft.connect(update_token_role).update(updateInput, [])).to.be.reverted;
+    await expect(nft.connect(burn_role).update(updateInput, [])).to.be.reverted;
+    await expect(nft.connect(transfer_role).update(updateInput, [])).to.be.reverted;
+    await expect(nft.connect(thirdparty).update(updateInput, [])).to.be.reverted;
+    await nft.update({...updateInput, baseURI: ""}, []);
     expect(await nft.tokenURI(1)).to.equal(URI);
   });
 
 
-  it("It should deploy the contract, tokens uri's are initially updatable, mint token, update URI with same value should fail, update URI with new value + freeze token, trying to update URI should lead to error", async () => {
+  it("It should deploy the contract, tokens uri's are initially updatable, mint token, update URI with same value should fail, update URI with new value + freeze token, trying to update URI should lead to error, check roles", async () => {
     const nft = await deploy();
     const URI = "default";
     const URIUpdated = "updated";
-    const URIUpdated2 = "updated2";
     await nft.mintToCaller(caller.address, 1, URI);
     expect(await nft.tokenURI(1)).to.equal(baseURI + URI);
     await expect(nft.updateTokenUri(1, URI, false)).to.be.reverted;
-    await nft.updateTokenUri(1, URIUpdated, true);
+    await nft.updateTokenUri(1, URIUpdated, false);
     expect(await nft.tokenURI(1)).to.equal(baseURI + URIUpdated);
-    await expect(nft.updateTokenUri(1, URIUpdated2, true)).to.be.reverted;
+
+    await nft.connect(admin_role).updateTokenUri(1, URIUpdated + 2, false);
+    expect(await nft.tokenURI(1)).to.equal(baseURI + URIUpdated + 2);
+
+    await nft.connect(update_token_role).updateTokenUri(1, URIUpdated + 3, false);
+    expect(await nft.tokenURI(1)).to.equal(baseURI + URIUpdated + 3);
+
+    await expect(nft.connect(mint_role).updateTokenUri(1, URIUpdated + 4, false)).to.be.reverted;
+    await expect(nft.connect(update_contract_role).updateTokenUri(1, URIUpdated + 4, false)).to.be.reverted;
+    await expect(nft.connect(burn_role).updateTokenUri(1, URIUpdated + 4, false)).to.be.reverted;
+    await expect(nft.connect(transfer_role).updateTokenUri(1, URIUpdated + 4, false)).to.be.reverted;
+    await expect(nft.connect(thirdparty).updateTokenUri(1, URIUpdated + 4, false)).to.be.reverted;
+
+    await nft.updateTokenUri(1, URIUpdated+100, true);
+    await expect(nft.updateTokenUri(1, URIUpdated+101, true)).to.be.reverted;
   });
 
   it("It should deploy the contract, tokens uri's are initially updatable, mint token, update URI, freeze tokens globally, trying to update URI should lead to error, freeze all accessible only once", async () => {
@@ -152,14 +219,16 @@ describe("ERC721NFTCustom", function () {
     await nft.updateTokenUri(1, URIUpdated, false);
     expect(await nft.tokenURI(1)).to.equal(baseURI + URIUpdated);
     await nft.update({
+      owner: admin_role.address,
       baseURI: "",
       metadataUpdatable: false,
       tokensTransferable: true,
       royaltiesBps: 250,
       royaltiesAddress: admin_role.address
-    });
+    }, []);
     await expect(nft.updateTokenUri(1, URIUpdated2, false)).to.be.reverted;
     await expect(nft.update({
+      owner: admin_role.address,
       baseURI: "",
       metadataUpdatable: false,
       tokensTransferable: true,
@@ -175,24 +244,30 @@ describe("ERC721NFTCustom", function () {
   });
 
 
-  it("It should deploy the contract, mint token, burn it by owner, then trying to update/freeze non-existing token should lead to error, burn is possible once", async () => {
-    const nft = await deploy();
-    const URI = "default";
-    await nft.mintToCaller(admin_role.address, 1, URI);
-    expect(await nft.tokenURI(1)).to.equal(baseURI + URI);
-    await expect(nft.connect(receiver).burn(1)).to.be.reverted;
-    await nft.burn(1);
-    await expect(nft.updateTokenUri(1, URI, true)).to.be.reverted;
-    await expect(nft.burn(1)).to.be.reverted;
-  });
-
-  it("It should deploy the contract, mint token, burn it, check totalSupply on all stages", async () => {
+  it("It should deploy the contract, mint token, burn it by owner, then trying to update/freeze non-existing token should lead to error, burn is possible once, check roles", async () => {
     const nft = await deploy();
     const URI = "default";
     expect(await nft.totalSupply()).to.equal(0);
     await nft.mintToCaller(admin_role.address, 1, URI);
-    expect(await nft.totalSupply()).to.equal(1);
+    await nft.mintToCaller(admin_role.address, 2, URI);
+    await nft.mintToCaller(admin_role.address, 3, URI);
+    expect(await nft.tokenURI(1)).to.equal(baseURI + URI);
+    await expect(nft.connect(receiver).burn(1)).to.be.reverted;
+    expect(await nft.totalSupply()).to.equal(3);
+
+    await expect(nft.connect(mint_role).burn(1)).to.be.reverted;
+    await expect(nft.connect(update_token_role).burn(1)).to.be.reverted;
+    await expect(nft.connect(update_contract_role).burn(1)).to.be.reverted;
+    await expect(nft.connect(transfer_role).burn(1)).to.be.reverted;
+    await expect(nft.connect(thirdparty).burn(1)).to.be.reverted;
+
     await nft.burn(1);
+    await expect(nft.updateTokenUri(1, URI, true)).to.be.reverted;
+    await expect(nft.burn(1)).to.be.reverted;
+    await nft.connect(admin_role).burn(2);
+    await expect(nft.updateTokenUri(2, URI, true)).to.be.reverted;
+    await nft.connect(burn_role).burn(3);
+    await expect(nft.updateTokenUri(3, URI, true)).to.be.reverted;
     expect(await nft.totalSupply()).to.equal(0);
   });
 
@@ -211,23 +286,39 @@ describe("ERC721NFTCustom", function () {
   });
 
 
-  it("It should deploy the contract, tokens are transferable, transfer, then update to non-transferable, transfer should fail", async () => {
+  it("It should deploy the contract, tokens are transferable, transfer, then update to non-transferable, transfer should fail, check roles", async () => {
     const nft = await deploy();
     const URI = "default";
     await nft.mintToCaller(admin_role.address, 1, URI);
+    await nft.mintToCaller(admin_role.address, 2, URI);
+    await nft.mintToCaller(admin_role.address, 3, URI);
     expect(await nft.ownerOf(1)).to.equal(admin_role.address);
+
+    await expect(nft.connect(mint_role).transferByOwner(receiver.address, 1)).to.be.reverted;
+    await expect(nft.connect(update_token_role).transferByOwner(receiver.address, 1)).to.be.reverted;
+    await expect(nft.connect(update_contract_role).transferByOwner(receiver.address, 1)).to.be.reverted;
+    await expect(nft.connect(burn_role).transferByOwner(receiver.address, 1)).to.be.reverted;
+    await expect(nft.connect(thirdparty).transferByOwner(receiver.address, 1)).to.be.reverted;
+
     await nft.transferByOwner(receiver.address, 1);
+    await nft.connect(admin_role).transferByOwner(receiver.address, 2);
+    await nft.connect(transfer_role).transferByOwner(receiver.address, 3);
+
     expect(await nft.ownerOf(1)).to.equal(receiver.address);
+    expect(await nft.ownerOf(2)).to.equal(receiver.address);
+    expect(await nft.ownerOf(3)).to.equal(receiver.address);
+
     await nft.update({
+      owner: admin_role.address,
       baseURI: "",
       metadataUpdatable: true,
       tokensTransferable: false,
       royaltiesBps: 250,
       royaltiesAddress: admin_role.address
-    });
-    await nft.mintToCaller(admin_role.address, 2, URI);
-    await expect(nft.transferByOwner(receiver.address, 2)).to.be.reverted;
-    expect(await nft.ownerOf(2)).to.equal(admin_role.address);
+    }, []);
+    await nft.mintToCaller(admin_role.address, 4, URI);
+    await expect(nft.transferByOwner(receiver.address, 4)).to.be.reverted;
+    expect(await nft.ownerOf(4)).to.equal(admin_role.address);
   });
 
   it("Should deploy the contract and return correct ERC2981 royalties info", async () => {

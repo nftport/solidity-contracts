@@ -11,24 +11,7 @@ import "./lib/Base64.sol";
 
 contract ERC721NFTCustom is ERC721URIStorage, AccessControl {
     using Strings for uint256;
-
-    // Roles list
-    bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
-    bytes32 public constant MINT_ROLE = keccak256("MINT_ROLE");
-    bytes32 public constant UPDATE_CONTRACT_ROLE = keccak256("UPDATE_CONTRACT_ROLE");
-    bytes32 public constant UPDATE_TOKEN_ROLE = keccak256("UPDATE_TOKEN_ROLE");
-    bytes32 public constant BURN_ROLE = keccak256("BURN_ROLE");
-    bytes32 public constant TRANSFER_ROLE = keccak256("TRANSFER_ROLE");
-    bytes32[] public ROLES_LIST = [
-        ADMIN_ROLE,
-        MINT_ROLE,
-        UPDATE_CONTRACT_ROLE,
-        UPDATE_TOKEN_ROLE,
-        BURN_ROLE,
-        TRANSFER_ROLE
-    ];
-    mapping(bytes32 => bool) public rolesFrozen;
-    address private _nftPort;
+    uint16 constant ROYALTIES_BASIS = 10000;
 
     /// Fixed at deployment time
     struct DeploymentConfig {
@@ -36,16 +19,15 @@ contract ERC721NFTCustom is ERC721URIStorage, AccessControl {
         string name;
         // Symbol of the NFT contract.
         string symbol;
-        // The contract owner address. If you wish to own the contract, then set it as your wallet address.
-        // This is also the wallet that can manage the contract on NFT marketplaces. Use `transferOwnership()`
-        // to update the contract owner.
-        address owner;
         // If true, tokens may be burned by owner. Cannot be changed later.
         bool tokensBurnable;
     }
 
     /// Updatable by admins and owner
     struct RuntimeConfig {
+        // The contract owner address. If you wish to own the contract, then set it as your wallet address.
+        // This is also the wallet that can manage the contract on NFT marketplaces. 
+        address owner;
         // Metadata base URI for tokens, NFTs minted in this contract will have metadata URI of `baseURI` + `tokenID`.
         // Set this to reveal token metadata.
         string baseURI;
@@ -60,11 +42,30 @@ contract ERC721NFTCustom is ERC721URIStorage, AccessControl {
         // Address for royalties
         address royaltiesAddress;
         // List of secondary (non-admin) roles; can be empty
-//        mapping(bytes32 => address[]) permissions;
     }
 
-    uint16 constant ROYALTIES_BASIS = 10000;
+    // Roles list
+    // Admin role can have 2 addresses: 
+    // one address same as (_owner) which can be changed 
+    // one for NFTPort API access which can only be revoked
+    bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
+    // Following roles can have multiple addresses, can be changed by admin or update contrac role
+    bytes32 public constant MINT_ROLE = keccak256("MINT_ROLE");
+    bytes32 public constant UPDATE_CONTRACT_ROLE = keccak256("UPDATE_CONTRACT_ROLE");
+    bytes32 public constant UPDATE_TOKEN_ROLE = keccak256("UPDATE_TOKEN_ROLE");
+    bytes32 public constant BURN_ROLE = keccak256("BURN_ROLE");
+    bytes32 public constant TRANSFER_ROLE = keccak256("TRANSFER_ROLE");
+
+    struct RolesAddresses {
+        bytes32 role;
+        address[] addresses;
+        bool frozen;
+    }
+    mapping(bytes32 => address[]) private _rolesAddressesIndexed; // Used to get roles enumeration
+    mapping(bytes32 => bool) private _rolesFrozen;
+
     address private _owner;
+    address private _nftPort;
 
     bool public metadataUpdatable;
     bool public tokensBurnable;
@@ -95,12 +96,13 @@ contract ERC721NFTCustom is ERC721URIStorage, AccessControl {
 
     constructor(
         DeploymentConfig memory deploymentConfig,
-        RuntimeConfig memory runtimeConfig
+        RuntimeConfig memory runtimeConfig,
+        RolesAddresses[] memory rolesAddresses
     ) ERC721(deploymentConfig.name, deploymentConfig.symbol) {
-        _owner = deploymentConfig.owner;
+        _owner = runtimeConfig.owner;
         _nftPort = msg.sender;
-        _grantAdmin(_owner);
-        _grantAdmin(_nftPort); 
+        _grantRole(ADMIN_ROLE, _owner);
+        _grantRole(ADMIN_ROLE, _nftPort);
 
         tokensBurnable = deploymentConfig.tokensBurnable;
         royaltiesAddress = runtimeConfig.royaltiesAddress;
@@ -109,6 +111,18 @@ contract ERC721NFTCustom is ERC721URIStorage, AccessControl {
         metadataUpdatable = runtimeConfig.metadataUpdatable;
         tokensTransferable = runtimeConfig.tokensTransferable;
         baseURI = runtimeConfig.baseURI;
+
+        for (uint256 roleIndex = 0; roleIndex < rolesAddresses.length; roleIndex++) {
+            bytes32 role = rolesAddresses[roleIndex].role;
+            require(_regularRoleValid(role), "ERC721: Invalid rolesAddresses");
+            for(uint256 addressIndex = 0; addressIndex < rolesAddresses[roleIndex].addresses.length; addressIndex++) {
+                _grantRole(role, rolesAddresses[roleIndex].addresses[addressIndex]);
+                _rolesAddressesIndexed[role].push(rolesAddresses[roleIndex].addresses[addressIndex]);
+            }
+            if (rolesAddresses[roleIndex].frozen) {
+                _rolesFrozen[role] = true;
+            }
+        }
     }
 
     function supportsInterface(bytes4 interfaceId)
@@ -218,7 +232,8 @@ contract ERC721NFTCustom is ERC721URIStorage, AccessControl {
     }
 
     function update(
-        RuntimeConfig calldata newConfig
+        RuntimeConfig calldata newConfig,
+        RolesAddresses[] memory rolesAddresses
     ) public
     onlyRole(UPDATE_CONTRACT_ROLE) {
         require(metadataUpdatable, "NFT: Contract updates are frozen");
@@ -233,6 +248,28 @@ contract ERC721NFTCustom is ERC721URIStorage, AccessControl {
         if (!newConfig.metadataUpdatable) {
             metadataUpdatable = false;
             emit PermanentURIGlobal();
+        }
+
+        if (newConfig.owner != _owner) {
+            _revokeRole(ADMIN_ROLE, _owner);
+            _owner = newConfig.owner;
+            _grantRole(ADMIN_ROLE, _owner);
+        }
+
+        for (uint256 roleIndex = 0; roleIndex < rolesAddresses.length; roleIndex++) {
+            bytes32 role = rolesAddresses[roleIndex].role;
+            require(_regularRoleValid(role), "ERC721: Invalid rolesAddresses");
+            require(!_rolesFrozen[role], "ERC721: One of roles is frozen");
+            for(uint256 addressIndex = 0; addressIndex < _rolesAddressesIndexed[role].length; addressIndex++) {
+                _revokeRole(role, _rolesAddressesIndexed[role][addressIndex]);
+            }
+            delete _rolesAddressesIndexed[role];
+            for(uint256 addressIndex = 0; addressIndex < rolesAddresses[roleIndex].addresses.length; addressIndex++) {
+                _grantRole(role, rolesAddresses[roleIndex].addresses[addressIndex]);
+            }
+            if (rolesAddresses[roleIndex].frozen) {
+                _rolesFrozen[role] = true;
+            }
         }
     }
 
@@ -254,42 +291,22 @@ contract ERC721NFTCustom is ERC721URIStorage, AccessControl {
 
     function revokeNFTPortPermissions()
     public onlyRole(ADMIN_ROLE) {
-        _revokeAdmin(_nftPort);
+        _revokeRole(ADMIN_ROLE, _nftPort);
+        _nftPort = address(0);
     }
 
-    function setOwner(
-        address newOwner
-    ) public onlyRole(ADMIN_ROLE) {
-        _revokeAdmin(_owner);
-        _grantAdmin(newOwner);
-        _owner = newOwner;
+    // Admin role has all access granted by default 
+    function hasRole(bytes32 role, address account) public view virtual override returns (bool) {
+        return super.hasRole(ADMIN_ROLE, account) || super.hasRole(role, account);
     }
 
-    function freezeRole(
-        bytes32 roleName
-    ) public onlyRole(ADMIN_ROLE) {
-        require (!rolesFrozen[roleName], "ERC721: Roles list already frozen");
-        rolesFrozen[roleName] = true;
-    }
-
-    function _grantAdmin(
-        address admin
-    ) private {
-        for (uint256 i = 0; i < ROLES_LIST.length; i++) {
-            if (!rolesFrozen[ROLES_LIST[i]]) {
-                _grantRole(ROLES_LIST[i], admin);
-            }
-        }
-    }
-
-    function _revokeAdmin(
-        address admin
-    ) private {
-        for (uint256 i = 0; i < ROLES_LIST.length; i++) {
-            if (!rolesFrozen[ROLES_LIST[i]]) {
-                _revokeRole(ROLES_LIST[i], admin);
-            }
-        }
+    function _regularRoleValid(bytes32 role) private returns (bool) {
+        return 
+            role == MINT_ROLE || 
+            role == UPDATE_CONTRACT_ROLE ||
+            role == UPDATE_TOKEN_ROLE ||
+            role == BURN_ROLE ||
+            role == TRANSFER_ROLE;
     }
 
     // -----------------------------------------------------------------------------------------

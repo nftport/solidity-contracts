@@ -14,11 +14,6 @@
             "type": "string"
           },
           {
-            "internalType": "address",
-            "name": "owner",
-            "type": "address"
-          },
-          {
             "internalType": "bool",
             "name": "tokensBurnable",
             "type": "bool"
@@ -30,6 +25,11 @@
       },
       {
         "components": [
+          {
+            "internalType": "address",
+            "name": "owner",
+            "type": "address"
+          },
           {
             "internalType": "string",
             "name": "baseURI",
@@ -59,6 +59,28 @@
         "internalType": "struct ERC721NFTCustom.RuntimeConfig",
         "name": "runtimeConfig",
         "type": "tuple"
+      },
+      {
+        "components": [
+          {
+            "internalType": "bytes32",
+            "name": "role",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "address[]",
+            "name": "addresses",
+            "type": "address[]"
+          },
+          {
+            "internalType": "bool",
+            "name": "frozen",
+            "type": "bool"
+          }
+        ],
+        "internalType": "struct ERC721NFTCustom.RolesAddresses[]",
+        "name": "rolesAddresses",
+        "type": "tuple[]"
       }
     ],
     "stateMutability": "nonpayable",
@@ -292,25 +314,6 @@
     "type": "function"
   },
   {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "name": "ROLES_LIST",
-    "outputs": [
-      {
-        "internalType": "bytes32",
-        "name": "",
-        "type": "bytes32"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
     "inputs": [],
     "name": "TRANSFER_ROLE",
     "outputs": [
@@ -423,19 +426,6 @@
       }
     ],
     "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "bytes32",
-        "name": "roleName",
-        "type": "bytes32"
-      }
-    ],
-    "name": "freezeRole",
-    "outputs": [],
-    "stateMutability": "nonpayable",
     "type": "function"
   },
   {
@@ -692,25 +682,6 @@
     "type": "function"
   },
   {
-    "inputs": [
-      {
-        "internalType": "bytes32",
-        "name": "",
-        "type": "bytes32"
-      }
-    ],
-    "name": "rolesFrozen",
-    "outputs": [
-      {
-        "internalType": "bool",
-        "name": "",
-        "type": "bool"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
     "inputs": [],
     "name": "royaltiesAddress",
     "outputs": [
@@ -830,19 +801,6 @@
       }
     ],
     "name": "setApprovalForAll",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "newOwner",
-        "type": "address"
-      }
-    ],
-    "name": "setOwner",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -1026,6 +984,11 @@
       {
         "components": [
           {
+            "internalType": "address",
+            "name": "owner",
+            "type": "address"
+          },
+          {
             "internalType": "string",
             "name": "baseURI",
             "type": "string"
@@ -1054,6 +1017,28 @@
         "internalType": "struct ERC721NFTCustom.RuntimeConfig",
         "name": "newConfig",
         "type": "tuple"
+      },
+      {
+        "components": [
+          {
+            "internalType": "bytes32",
+            "name": "role",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "address[]",
+            "name": "addresses",
+            "type": "address[]"
+          },
+          {
+            "internalType": "bool",
+            "name": "frozen",
+            "type": "bool"
+          }
+        ],
+        "internalType": "struct ERC721NFTCustom.RolesAddresses[]",
+        "name": "rolesAddresses",
+        "type": "tuple[]"
       }
     ],
     "name": "update",
