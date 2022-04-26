@@ -13,7 +13,13 @@ const roles = {
   TRANSFER_ROLE: keccak256("TRANSFER_ROLE")
 }
 
-const deploy = async(metadataUpdatable = true, tokensBurnable = true, tokensTransferable = true, overrideBaseURI = null) => {
+const deploy = async(
+  metadataUpdatable = true,
+  tokensBurnable = true,
+  tokensTransferable = true,
+  overrideBaseURI = null,
+  overrideRolesAddresses = null
+) => {
     [
       caller,
       receiver,
@@ -42,7 +48,7 @@ const deploy = async(metadataUpdatable = true, tokensBurnable = true, tokensTran
     royaltiesAddress: admin_role.address
   }
 
-  const rolesAddresses = [
+  const defaultRolesAddresses = [
     {
       role: roles.MINT_ROLE,
       addresses: [mint_role.address, mint2_role.address],
@@ -69,6 +75,7 @@ const deploy = async(metadataUpdatable = true, tokensBurnable = true, tokensTran
       frozen: true
     }
   ]
+  rolesAddresses = overrideRolesAddresses ? overrideRolesAddresses : defaultRolesAddresses;
 
   const nft = await NFT.deploy(
     deploymentConfig,
@@ -92,6 +99,81 @@ describe("ERC721NFTCustom", function () {
       burn_role,
       transfer_role
     ] = await ethers.getSigners();
+  });
+
+  it("It should check deployment various roles cases", async () => {
+    // empty roles
+    await deploy(true, true, true, null, []);
+    // wrong role
+    await expect(deploy(true, true, true, null, [
+      {
+        role: 123123,
+        addresses: [mint_role.address, mint2_role.address],
+        frozen: false
+      },
+    ])).to.be.reverted;
+    // role w/no address; then same w/address - wrong input, but should be processed correctly, 
+    // as freeze applies after initialization
+    await deploy(true, true, true, null, [
+      {
+        role: roles.MINT_ROLE,
+        addresses: [],
+        frozen: true
+      },
+      {
+        role: roles.MINT_ROLE,
+        addresses: [mint_role.address, mint2_role.address],
+        frozen: true
+      },
+    ]);
+  });
+
+  it("It should deploy, then update one of roles w/different cases", async () => {
+    const nft = await deploy();
+    const newConfig = {
+      owner: admin_role.address,
+      baseURI: "baseUri",
+      metadataUpdatable: true,
+      tokensTransferable: true,
+      royaltiesBps: 250,
+      royaltiesAddress: admin_role.address
+    }; 
+    // wrong role
+    await expect(nft.update(newConfig, [
+      {
+        role: 123123,
+        addresses: [mint_role.address, mint2_role.address],
+        frozen: false
+      },
+    ])).to.be.reverted;
+    expect(await nft.hasRole(roles.BURN_ROLE, burn_role.address)).to.equal(true);
+    // no roles; freeze
+    await nft.update(newConfig, [
+      {
+        role: roles.BURN_ROLE,
+        addresses: [],
+        frozen: false
+      },
+    ]);
+    expect(await nft.hasRole(roles.BURN_ROLE, burn_role.address)).to.equal(false);
+    await nft.update(newConfig, [
+      {
+        role: roles.BURN_ROLE,
+        addresses: [burn_role.address, mint_role.address, mint2_role.address],
+        frozen: true
+      },
+    ]);
+    expect(await nft.hasRole(roles.BURN_ROLE, burn_role.address)).to.equal(true);
+    expect(await nft.hasRole(roles.BURN_ROLE, mint_role.address)).to.equal(true);
+    expect(await nft.hasRole(roles.BURN_ROLE, mint2_role.address)).to.equal(true);
+    // try to update frozen role
+    await expect(nft.update(newConfig, [
+      {
+        role: roles.BURN_ROLE,
+        addresses: [burn_role.address],
+        frozen: false
+      },
+    ])).to.be.reverted;
   });
 
   it("It should deploy the contract, mint a token, and resolve to the right URI, mint from wrong roles should fail", async () => {
