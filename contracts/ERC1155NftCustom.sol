@@ -2,18 +2,17 @@
 pragma solidity 0.8.9;
 
 import "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
-import "@openzeppelin/contracts/access/AccessControl.sol";
 import {IERC2981} from "@openzeppelin/contracts/token/common/ERC2981.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 
+import "./lib/GranularRoles.sol";
 import "./lib/Base64.sol";
+import "./lib/Config.sol";
 
-contract ERC1155NFTCustom is ERC1155, AccessControl {
+contract ERC1155NFTCustom is ERC1155, GranularRoles {
     using Strings for uint256;
 
-    bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
     uint16 constant ROYALTIES_BASIS = 10000;
-    address private _owner;
 
     bool public metadataUpdatable;
     bool public tokensBurnable;
@@ -33,42 +32,32 @@ contract ERC1155NFTCustom is ERC1155, AccessControl {
     event PermanentURI(string _value, uint256 indexed _id); // https://docs.opensea.io/docs/metadata-standards
     event PermanentURIGlobal();
 
+    string constant DEFAULT_URI = "";
+
     constructor(
-        string memory _name,
-        string memory _symbol,
-        address owner,
-        bool _metadataUpdatable,
-        bool _tokensBurnable,
-        bool _tokensTransferable,
-        string memory _initBaseURI,
-        string memory _defaultUri,
-        address _royaltiesAddress,
-        uint96 _royaltiesBasisPoints
-    ) ERC1155(_defaultUri) {
-        _setupRole(DEFAULT_ADMIN_ROLE, owner);
-        _setupRole(MINTER_ROLE, owner);
-        _setupRole(MINTER_ROLE, msg.sender);
+        Config.Deployment memory deploymentConfig,
+        Config.Runtime memory runtimeConfig,
+        RolesAddresses[] memory rolesAddresses
+    ) ERC1155(DEFAULT_URI) {
+        royaltiesAddress = runtimeConfig.royaltiesAddress;
+        royaltiesBasisPoints = runtimeConfig.royaltiesBps;
 
-        royaltiesAddress = _royaltiesAddress;
-        royaltiesBasisPoints = _royaltiesBasisPoints;
+        metadataUpdatable = runtimeConfig.metadataUpdatable;
+        tokensBurnable = deploymentConfig.tokensBurnable;
+        tokensTransferable = runtimeConfig.tokensTransferable;
+        baseURI = runtimeConfig.baseURI;
 
-        metadataUpdatable = _metadataUpdatable;
-        tokensBurnable = _tokensBurnable;
-        tokensTransferable = _tokensTransferable;
-
-        baseURI = _initBaseURI;
-        _owner = owner;
-        name = _name;
-        symbol = _symbol;
+        name = deploymentConfig.name;
+        symbol = deploymentConfig.symbol;
     }
 
-    function setURI(string memory _newURI) public onlyRole(MINTER_ROLE) {
+    function setURI(string memory _newURI) public onlyRole(UPDATE_CONTRACT_ROLE) {
         _setURI(_newURI);
     }
 
     function updateTokenUri(uint256 _tokenId, string memory _newUri, bool _isFreezeTokenUri)
     public
-    onlyRole(MINTER_ROLE) {
+    onlyRole(UPDATE_TOKEN_ROLE) {
         require(_exists(_tokenId), "NFT: update URI query for nonexistent token");
         require(metadataUpdatable, "NFT: Token uris are frozen globally");
         require(freezeTokenUris[_tokenId] != true, "NFT: Token is frozen");
@@ -88,7 +77,7 @@ contract ERC1155NFTCustom is ERC1155, AccessControl {
     function burn(
         uint256 id,
         uint256 value
-    ) public onlyRole(MINTER_ROLE) {
+    ) public onlyRole(BURN_ROLE) {
         require(tokensBurnable, "NFT: tokens burning is disabled");
 
         _burn(_owner, id, value);
@@ -98,7 +87,7 @@ contract ERC1155NFTCustom is ERC1155, AccessControl {
     function burnBatch(
         uint256[] memory ids,
         uint256[] memory values
-    ) public onlyRole(MINTER_ROLE) {
+    ) public onlyRole(BURN_ROLE) {
         require(tokensBurnable, "NFT: tokens burning is disabled");
         _burnBatch(_owner, ids, values);
         for (uint256 i = 0; i < ids.length; i++) {
@@ -110,7 +99,7 @@ contract ERC1155NFTCustom is ERC1155, AccessControl {
         address to,
         uint256 id,
         uint256 amount
-    ) public onlyRole(MINTER_ROLE) {
+    ) public onlyRole(TRANSFER_ROLE) {
         require(tokensTransferable, "NFT: Transfers by owner are disabled");
         _safeTransferFrom(_owner, to, id, amount, "");
     }
@@ -119,7 +108,7 @@ contract ERC1155NFTCustom is ERC1155, AccessControl {
         address[] memory to,
         uint256[] memory ids,
         uint256[] memory amounts
-    ) public onlyRole(MINTER_ROLE) {
+    ) public onlyRole(TRANSFER_ROLE) {
         require(tokensTransferable, "NFT: Transfers by owner are disabled");
         for (uint256 i = 0; i < ids.length; i++) {
             _safeTransferFrom(_owner, to[i], ids[i], amounts[i], "");
@@ -127,25 +116,25 @@ contract ERC1155NFTCustom is ERC1155, AccessControl {
     }
 
     function update(
-        string memory _newBaseURI,
-        bool _tokensTransferable,
-        bool _freezeUpdates,
-        address _royaltiesAddress,
-        uint96 _royaltiesBasisPoints
-    ) public onlyRole(MINTER_ROLE) {
+        Config.Runtime calldata newConfig,
+        RolesAddresses[] memory rolesAddresses
+    ) public
+    onlyRole(UPDATE_CONTRACT_ROLE) {
         require(metadataUpdatable, "NFT: Contract updates are frozen");
 
-        baseURI = _newBaseURI;
-        royaltiesAddress = _royaltiesAddress;
-        royaltiesBasisPoints = _royaltiesBasisPoints;
+        baseURI = newConfig.baseURI;
+        royaltiesAddress = newConfig.royaltiesAddress;
+        royaltiesBasisPoints = newConfig.royaltiesBps;
 
-        if (!_tokensTransferable) {
+        if (!newConfig.tokensTransferable) {
             tokensTransferable = false;
         }
-        if (_freezeUpdates) {
+        if (!newConfig.metadataUpdatable) {
             metadataUpdatable = false;
             emit PermanentURIGlobal();
         }
+
+        _updateRoles(newConfig.owner, rolesAddresses);
     }
 
     function totalSupply (uint256 _id) public view returns (uint256) {
@@ -164,7 +153,9 @@ contract ERC1155NFTCustom is ERC1155, AccessControl {
         }
     }
 
-    function mintByOwner( address account, uint256 id, uint256 amount, string memory uri) public onlyRole(MINTER_ROLE) {
+    function mintByOwner( address account, uint256 id, uint256 amount, string memory uri) 
+    public
+    onlyRole(MINT_ROLE) {
         require(!_exists(id), "NFT: token already minted");
         if (bytes(uri).length > 0) {
             _tokenURIs[id] = uri;
@@ -179,7 +170,7 @@ contract ERC1155NFTCustom is ERC1155, AccessControl {
         uint256[] memory ids,
         uint256[] memory amounts,
         string[] memory uris
-    ) public onlyRole(MINTER_ROLE) {
+    ) public onlyRole(MINT_ROLE) {
         for (uint256 i = 0; i < ids.length; i++) {
             require(!_exists(ids[i]), "NFT: one of tokens are already minted");
             require(to[i] == address(to[i]), "NFT: one of addresses is invalid");
@@ -229,11 +220,6 @@ contract ERC1155NFTCustom is ERC1155, AccessControl {
     {
         return ERC1155.supportsInterface(interfaceId) || interfaceId == type(IERC2981).interfaceId;
     }
-
-    function owner() public view returns (address) {
-        return _owner;
-    }
-
 
     function _exists(uint256 _tokenId) internal view virtual returns (bool) {
         return tokenSupply[_tokenId] > 0;

@@ -2,13 +2,11 @@
 pragma solidity 0.8.9;
 
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
-import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
 import {IERC2981} from "@openzeppelin/contracts/token/common/ERC2981.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 
 import "./lib/GranularRoles.sol";
-
 import "./lib/Base64.sol";
 import "./lib/Config.sol";
 
@@ -48,12 +46,13 @@ contract ERC721NFTCustom is ERC721URIStorage, GranularRoles {
         Config.Runtime memory runtimeConfig,
         RolesAddresses[] memory rolesAddresses
     ) ERC721(deploymentConfig.name, deploymentConfig.symbol) {
-        tokensBurnable = deploymentConfig.tokensBurnable;
         royaltiesAddress = runtimeConfig.royaltiesAddress;
-
         royaltiesBasisPoints = runtimeConfig.royaltiesBps;
+
         metadataUpdatable = runtimeConfig.metadataUpdatable;
+        tokensBurnable = deploymentConfig.tokensBurnable;
         tokensTransferable = runtimeConfig.tokensTransferable;
+
         baseURI = runtimeConfig.baseURI;
 
         _initRoles(runtimeConfig.owner, rolesAddresses);

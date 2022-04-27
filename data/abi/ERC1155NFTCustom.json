@@ -2,54 +2,85 @@
   {
     "inputs": [
       {
-        "internalType": "string",
-        "name": "_name",
-        "type": "string"
+        "components": [
+          {
+            "internalType": "string",
+            "name": "name",
+            "type": "string"
+          },
+          {
+            "internalType": "string",
+            "name": "symbol",
+            "type": "string"
+          },
+          {
+            "internalType": "bool",
+            "name": "tokensBurnable",
+            "type": "bool"
+          }
+        ],
+        "internalType": "struct Config.Deployment",
+        "name": "deploymentConfig",
+        "type": "tuple"
       },
       {
-        "internalType": "string",
-        "name": "_symbol",
-        "type": "string"
+        "components": [
+          {
+            "internalType": "address",
+            "name": "owner",
+            "type": "address"
+          },
+          {
+            "internalType": "string",
+            "name": "baseURI",
+            "type": "string"
+          },
+          {
+            "internalType": "bool",
+            "name": "metadataUpdatable",
+            "type": "bool"
+          },
+          {
+            "internalType": "bool",
+            "name": "tokensTransferable",
+            "type": "bool"
+          },
+          {
+            "internalType": "uint256",
+            "name": "royaltiesBps",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "royaltiesAddress",
+            "type": "address"
+          }
+        ],
+        "internalType": "struct Config.Runtime",
+        "name": "runtimeConfig",
+        "type": "tuple"
       },
       {
-        "internalType": "address",
-        "name": "owner",
-        "type": "address"
-      },
-      {
-        "internalType": "bool",
-        "name": "_metadataUpdatable",
-        "type": "bool"
-      },
-      {
-        "internalType": "bool",
-        "name": "_tokensBurnable",
-        "type": "bool"
-      },
-      {
-        "internalType": "bool",
-        "name": "_tokensTransferable",
-        "type": "bool"
-      },
-      {
-        "internalType": "string",
-        "name": "_initBaseURI",
-        "type": "string"
-      },
-      {
-        "internalType": "string",
-        "name": "_defaultUri",
-        "type": "string"
-      },
-      {
-        "internalType": "address",
-        "name": "_royaltiesAddress",
-        "type": "address"
-      },
-      {
-        "internalType": "uint96",
-        "name": "_royaltiesBasisPoints",
-        "type": "uint96"
+        "components": [
+          {
+            "internalType": "bytes32",
+            "name": "role",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "address[]",
+            "name": "addresses",
+            "type": "address[]"
+          },
+          {
+            "internalType": "bool",
+            "name": "frozen",
+            "type": "bool"
+          }
+        ],
+        "internalType": "struct GranularRoles.RolesAddresses[]",
+        "name": "rolesAddresses",
+        "type": "tuple[]"
       }
     ],
     "stateMutability": "nonpayable",
@@ -275,6 +306,32 @@
   },
   {
     "inputs": [],
+    "name": "ADMIN_ROLE",
+    "outputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "BURN_ROLE",
+    "outputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
     "name": "DEFAULT_ADMIN_ROLE",
     "outputs": [
       {
@@ -288,7 +345,46 @@
   },
   {
     "inputs": [],
-    "name": "MINTER_ROLE",
+    "name": "MINT_ROLE",
+    "outputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "TRANSFER_ROLE",
+    "outputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "UPDATE_CONTRACT_ROLE",
+    "outputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "UPDATE_TOKEN_ROLE",
     "outputs": [
       {
         "internalType": "bytes32",
@@ -941,29 +1037,63 @@
   {
     "inputs": [
       {
-        "internalType": "string",
-        "name": "_newBaseURI",
-        "type": "string"
+        "components": [
+          {
+            "internalType": "address",
+            "name": "owner",
+            "type": "address"
+          },
+          {
+            "internalType": "string",
+            "name": "baseURI",
+            "type": "string"
+          },
+          {
+            "internalType": "bool",
+            "name": "metadataUpdatable",
+            "type": "bool"
+          },
+          {
+            "internalType": "bool",
+            "name": "tokensTransferable",
+            "type": "bool"
+          },
+          {
+            "internalType": "uint256",
+            "name": "royaltiesBps",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "royaltiesAddress",
+            "type": "address"
+          }
+        ],
+        "internalType": "struct Config.Runtime",
+        "name": "newConfig",
+        "type": "tuple"
       },
       {
-        "internalType": "bool",
-        "name": "_tokensTransferable",
-        "type": "bool"
-      },
-      {
-        "internalType": "bool",
-        "name": "_freezeUpdates",
-        "type": "bool"
-      },
-      {
-        "internalType": "address",
-        "name": "_royaltiesAddress",
-        "type": "address"
-      },
-      {
-        "internalType": "uint96",
-        "name": "_royaltiesBasisPoints",
-        "type": "uint96"
+        "components": [
+          {
+            "internalType": "bytes32",
+            "name": "role",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "address[]",
+            "name": "addresses",
+            "type": "address[]"
+          },
+          {
+            "internalType": "bool",
+            "name": "frozen",
+            "type": "bool"
+          }
+        ],
+        "internalType": "struct GranularRoles.RolesAddresses[]",
+        "name": "rolesAddresses",
+        "type": "tuple[]"
       }
     ],
     "name": "update",
