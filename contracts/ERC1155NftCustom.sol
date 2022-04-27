@@ -49,6 +49,8 @@ contract ERC1155NFTCustom is ERC1155, GranularRoles {
 
         name = deploymentConfig.name;
         symbol = deploymentConfig.symbol;
+
+        _initRoles(runtimeConfig.owner, rolesAddresses);
     }
 
     function setURI(string memory _newURI) public onlyRole(UPDATE_CONTRACT_ROLE) {

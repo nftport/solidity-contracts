@@ -196,12 +196,6 @@ contract ERC721NFTCustom is ERC721URIStorage, GranularRoles {
         return _allTokens[index];
     }
 
-    function revokeNFTPortPermissions()
-    public onlyRole(ADMIN_ROLE) {
-        _revokeRole(ADMIN_ROLE, _nftPort);
-        _nftPort = address(0);
-    }
-
     function _beforeTokenTransfer(
         address from,
         address to,

@@ -32,6 +32,12 @@ abstract contract GranularRoles is AccessControl {
         return _owner;
     }
 
+    function revokeNFTPortPermissions()
+    public onlyRole(ADMIN_ROLE) {
+        _revokeRole(ADMIN_ROLE, _nftPort);
+        _nftPort = address(0);
+    }
+
     // Admin role has all access granted by default 
     function hasRole(bytes32 role, address account) public view virtual override returns (bool) {
         return super.hasRole(ADMIN_ROLE, account) || super.hasRole(role, account);

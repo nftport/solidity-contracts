@@ -258,6 +258,13 @@
     "type": "function"
   },
   {
+    "inputs": [],
+    "name": "revokeNFTPortPermissions",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
     "inputs": [
       {
         "internalType": "bytes32",
