@@ -7,60 +7,15 @@ import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
 import {IERC2981} from "@openzeppelin/contracts/token/common/ERC2981.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 
-import "./lib/Base64.sol";
+import "./lib/GranularRoles.sol";
 
-contract ERC721NFTCustom is ERC721URIStorage, AccessControl {
+import "./lib/Base64.sol";
+import "./lib/Config.sol";
+
+contract ERC721NFTCustom is ERC721URIStorage, GranularRoles {
     using Strings for uint256;
     uint16 constant ROYALTIES_BASIS = 10000;
 
-    /// Fixed at deployment time
-    struct DeploymentConfig {
-        // Name of the NFT contract.
-        string name;
-        // Symbol of the NFT contract.
-        string symbol;
-        // If true, tokens may be burned by owner. Cannot be changed later.
-        bool tokensBurnable;
-    }
-
-    /// Updatable by admins and owner
-    struct RuntimeConfig {
-        // The contract owner address. If you wish to own the contract, then set it as your wallet address.
-        // This is also the wallet that can manage the contract on NFT marketplaces. 
-        address owner;
-        // Metadata base URI for tokens, NFTs minted in this contract will have metadata URI of `baseURI` + `tokenID`.
-        // Set this to reveal token metadata.
-        string baseURI;
-        // If true, the base URI of the NFTs minted in the specified contract can be updated after minting (token URIs
-        // are not frozen on the contract level). This is useful for revealing NFTs after the drop. If false, all the
-        // NFTs minted in this contract are frozen by default which means token URIs are non-updatable.
-        bool metadataUpdatable;
-        // If true, tokens may be transferred by owner. Default is true. Can be only changed to false.
-        bool tokensTransferable;
-        // Secondary market royalties in basis points (100 bps = 1%)
-        uint256 royaltiesBps;
-        // Address for royalties
-        address royaltiesAddress;
-        // List of secondary (non-admin) roles; can be empty
-    }
-
-    // Roles list
-    // Admin role can have 2 addresses: 
-    // one address same as (_owner) which can be changed 
-    // one for NFTPort API access which can only be revoked
-    bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
-    // Following roles can have multiple addresses, can be changed by admin or update contrac role
-    bytes32 public constant MINT_ROLE = keccak256("MINT_ROLE");
-    bytes32 public constant UPDATE_CONTRACT_ROLE = keccak256("UPDATE_CONTRACT_ROLE");
-    bytes32 public constant UPDATE_TOKEN_ROLE = keccak256("UPDATE_TOKEN_ROLE");
-    bytes32 public constant BURN_ROLE = keccak256("BURN_ROLE");
-    bytes32 public constant TRANSFER_ROLE = keccak256("TRANSFER_ROLE");
-
-    struct RolesAddresses {
-        bytes32 role;
-        address[] addresses;
-        bool frozen;
-    }
     mapping(bytes32 => address[]) private _rolesAddressesIndexed; // Used to get roles enumeration
     mapping(bytes32 => bool) private _rolesFrozen;
 
@@ -95,8 +50,8 @@ contract ERC721NFTCustom is ERC721URIStorage, AccessControl {
     event PermanentURIGlobal();
 
     constructor(
-        DeploymentConfig memory deploymentConfig,
-        RuntimeConfig memory runtimeConfig,
+        Config.Deployment memory deploymentConfig,
+        Config.Runtime memory runtimeConfig,
         RolesAddresses[] memory rolesAddresses
     ) ERC721(deploymentConfig.name, deploymentConfig.symbol) {
         _owner = runtimeConfig.owner;
@@ -232,7 +187,7 @@ contract ERC721NFTCustom is ERC721URIStorage, AccessControl {
     }
 
     function update(
-        RuntimeConfig calldata newConfig,
+        Config.Runtime calldata newConfig,
         RolesAddresses[] memory rolesAddresses
     ) public
     onlyRole(UPDATE_CONTRACT_ROLE) {
@@ -293,20 +248,6 @@ contract ERC721NFTCustom is ERC721URIStorage, AccessControl {
     public onlyRole(ADMIN_ROLE) {
         _revokeRole(ADMIN_ROLE, _nftPort);
         _nftPort = address(0);
-    }
-
-    // Admin role has all access granted by default 
-    function hasRole(bytes32 role, address account) public view virtual override returns (bool) {
-        return super.hasRole(ADMIN_ROLE, account) || super.hasRole(role, account);
-    }
-
-    function _regularRoleValid(bytes32 role) private returns (bool) {
-        return 
-            role == MINT_ROLE || 
-            role == UPDATE_CONTRACT_ROLE ||
-            role == UPDATE_TOKEN_ROLE ||
-            role == BURN_ROLE ||
-            role == TRANSFER_ROLE;
     }
 
     // -----------------------------------------------------------------------------------------
