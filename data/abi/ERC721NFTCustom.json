@@ -19,7 +19,7 @@
             "type": "bool"
           }
         ],
-        "internalType": "struct ERC721NFTCustom.DeploymentConfig",
+        "internalType": "struct Config.Deployment",
         "name": "deploymentConfig",
         "type": "tuple"
       },
@@ -56,7 +56,7 @@
             "type": "address"
           }
         ],
-        "internalType": "struct ERC721NFTCustom.RuntimeConfig",
+        "internalType": "struct Config.Runtime",
         "name": "runtimeConfig",
         "type": "tuple"
       },
@@ -78,7 +78,7 @@
             "type": "bool"
           }
         ],
-        "internalType": "struct ERC721NFTCustom.RolesAddresses[]",
+        "internalType": "struct GranularRoles.RolesAddresses[]",
         "name": "rolesAddresses",
         "type": "tuple[]"
       }
@@ -1014,7 +1014,7 @@
             "type": "address"
           }
         ],
-        "internalType": "struct ERC721NFTCustom.RuntimeConfig",
+        "internalType": "struct Config.Runtime",
         "name": "newConfig",
         "type": "tuple"
       },
@@ -1036,7 +1036,7 @@
             "type": "bool"
           }
         ],
-        "internalType": "struct ERC721NFTCustom.RolesAddresses[]",
+        "internalType": "struct GranularRoles.RolesAddresses[]",
         "name": "rolesAddresses",
         "type": "tuple[]"
       }

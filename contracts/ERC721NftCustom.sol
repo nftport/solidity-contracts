@@ -16,12 +16,6 @@ contract ERC721NFTCustom is ERC721URIStorage, GranularRoles {
     using Strings for uint256;
     uint16 constant ROYALTIES_BASIS = 10000;
 
-    mapping(bytes32 => address[]) private _rolesAddressesIndexed; // Used to get roles enumeration
-    mapping(bytes32 => bool) private _rolesFrozen;
-
-    address private _owner;
-    address private _nftPort;
-
     bool public metadataUpdatable;
     bool public tokensBurnable;
     bool public tokensTransferable;
@@ -54,11 +48,6 @@ contract ERC721NFTCustom is ERC721URIStorage, GranularRoles {
         Config.Runtime memory runtimeConfig,
         RolesAddresses[] memory rolesAddresses
     ) ERC721(deploymentConfig.name, deploymentConfig.symbol) {
-        _owner = runtimeConfig.owner;
-        _nftPort = msg.sender;
-        _grantRole(ADMIN_ROLE, _owner);
-        _grantRole(ADMIN_ROLE, _nftPort);
-
         tokensBurnable = deploymentConfig.tokensBurnable;
         royaltiesAddress = runtimeConfig.royaltiesAddress;
 
@@ -67,17 +56,7 @@ contract ERC721NFTCustom is ERC721URIStorage, GranularRoles {
         tokensTransferable = runtimeConfig.tokensTransferable;
         baseURI = runtimeConfig.baseURI;
 
-        for (uint256 roleIndex = 0; roleIndex < rolesAddresses.length; roleIndex++) {
-            bytes32 role = rolesAddresses[roleIndex].role;
-            require(_regularRoleValid(role), "ERC721: Invalid rolesAddresses");
-            for(uint256 addressIndex = 0; addressIndex < rolesAddresses[roleIndex].addresses.length; addressIndex++) {
-                _grantRole(role, rolesAddresses[roleIndex].addresses[addressIndex]);
-                _rolesAddressesIndexed[role].push(rolesAddresses[roleIndex].addresses[addressIndex]);
-            }
-            if (rolesAddresses[roleIndex].frozen) {
-                _rolesFrozen[role] = true;
-            }
-        }
+        _initRoles(runtimeConfig.owner, rolesAddresses);
     }
 
     function supportsInterface(bytes4 interfaceId)
@@ -124,10 +103,6 @@ contract ERC721NFTCustom is ERC721URIStorage, GranularRoles {
         );
 
         return output;
-    }
-
-    function owner() public view returns (address) {
-        return _owner;
     }
 
     function _baseURI()
@@ -205,27 +180,7 @@ contract ERC721NFTCustom is ERC721URIStorage, GranularRoles {
             emit PermanentURIGlobal();
         }
 
-        if (newConfig.owner != _owner) {
-            _revokeRole(ADMIN_ROLE, _owner);
-            _owner = newConfig.owner;
-            _grantRole(ADMIN_ROLE, _owner);
-        }
-
-        for (uint256 roleIndex = 0; roleIndex < rolesAddresses.length; roleIndex++) {
-            bytes32 role = rolesAddresses[roleIndex].role;
-            require(_regularRoleValid(role), "ERC721: Invalid rolesAddresses");
-            require(!_rolesFrozen[role], "ERC721: One of roles is frozen");
-            for(uint256 addressIndex = 0; addressIndex < _rolesAddressesIndexed[role].length; addressIndex++) {
-                _revokeRole(role, _rolesAddressesIndexed[role][addressIndex]);
-            }
-            delete _rolesAddressesIndexed[role];
-            for(uint256 addressIndex = 0; addressIndex < rolesAddresses[roleIndex].addresses.length; addressIndex++) {
-                _grantRole(role, rolesAddresses[roleIndex].addresses[addressIndex]);
-            }
-            if (rolesAddresses[roleIndex].frozen) {
-                _rolesFrozen[role] = true;
-            }
-        }
+        _updateRoles(newConfig.owner, rolesAddresses);
     }
 
     function totalSupply() public view virtual returns (uint256) {
@@ -242,15 +197,11 @@ contract ERC721NFTCustom is ERC721URIStorage, GranularRoles {
         return _allTokens[index];
     }
 
-    // -----------------------------------------------------------------------------------------
-
     function revokeNFTPortPermissions()
     public onlyRole(ADMIN_ROLE) {
         _revokeRole(ADMIN_ROLE, _nftPort);
         _nftPort = address(0);
     }
-
-    // -----------------------------------------------------------------------------------------
 
     function _beforeTokenTransfer(
         address from,
