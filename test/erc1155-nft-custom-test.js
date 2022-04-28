@@ -197,12 +197,23 @@ describe("ERC1155NFTCustom", function () {
     await expect(nft.connect(thirdparty).mintByOwner(caller.address, 1, 10, URI)).to.be.reverted;
   });
 
-  it("It should deploy the contract, revoke NFTPort permission, then mint a token from NFTPort should fail", async () => {
+  it("It should deploy the contract, check owner update, revoke NFTPort permission, then mint a token from NFTPort should fail", async () => {
     const nft = await deploy();
     const URI = "QmWJBNeQAm9Rh4YaW8GFRnSgwa4dN889VKm9poc2DQPBkv";
     await nft.mintByOwner(caller.address, 1, 10, URI);
+    expect(await nft.owner()).to.equal(admin_role.address); 
+    await nft.update({
+      owner: thirdparty.address,
+      baseURI: baseURIUpdated,
+      metadataUpdatable: false,
+      tokensTransferable: true,
+      royaltiesBps: 250,
+      royaltiesAddress: admin_role.address
+    }, []);
+    expect(await nft.owner()).to.equal(thirdparty.address);
+    await nft.connect(thirdparty).mintByOwner(thirdparty.address, 2, 10, URI);
     await nft.revokeNFTPortPermissions();
-    await expect(nft.mintByOwner(caller.address, 1, 10, URI)).to.be.reverted;
+    await expect(nft.mintByOwner(caller.address, 3, 10, URI)).to.be.reverted;
   });
 
   it("It should deploy the contract, with correct name and symbol, options are false", async () => {
@@ -357,54 +368,69 @@ describe("ERC1155NFTCustom", function () {
     await expect(nft.burn(3, 1)).to.be.reverted;
   });
 
-  // it("It should deploy the contract, mint token, burn it, check totalSupply on all stages", async () => {
-  //   const nft = await deploy();
-  //   const URI = "default";
-  //   expect(await nft.totalSupply(1)).to.equal(0);
-  //   await nft.mintByOwner(owner.address, 1, 2, URI);
-  //   expect(await nft.totalSupply(1)).to.equal(2);
-  //   await nft.burn(1, 1);
-  //   expect(await nft.totalSupply(1)).to.equal(1);
-  // });
+  it("It should deploy the contract, mint token, burn it, check totalSupply on all stages", async () => {
+    const nft = await deploy();
+    const URI = "default";
+    expect(await nft.totalSupply(1)).to.equal(0);
+    await nft.mintByOwner(admin_role.address, 1, 2, URI);
+    expect(await nft.totalSupply(1)).to.equal(2);
+    await nft.burn(1, 1);
+    expect(await nft.totalSupply(1)).to.equal(1);
+  });
 
-  // it("It should deploy the contract, tokens are transferable, transfer, then update to non-transferable, transfer should fail", async () => {
-  //   const nft = await deploy();
-  //   const URI = "default";
-  //   await nft.mintByOwner(owner.address, 1, 2, URI);
-  //   expect(await nft.balanceOf(owner.address, 1)).to.equal(2);
-  //   await nft.transferByOwner(receiver.address, 1, 1);
-  //   expect(await nft.balanceOf(receiver.address, 1)).to.equal(1);
-  //   await nft.update('', false, true, owner.address, 250);
-  //   await expect(nft.transferByOwner(caller.address, 1, 1)).to.be.reverted;
-  //   expect(await nft.balanceOf(caller.address, 1)).to.equal(0);
-  // });
+  it("It should deploy the contract, tokens are transferable, transfer, then update to non-transferable, transfer should fail", async () => {
+    const nft = await deploy();
+    const URI = "default";
+    await nft.mintByOwner(admin_role.address, 1, 2, URI);
+    expect(await nft.balanceOf(admin_role.address, 1)).to.equal(2);
+    await nft.transferByOwner(receiver.address, 1, 1);
+    expect(await nft.balanceOf(receiver.address, 1)).to.equal(1);
+    await nft.update({
+      owner: admin_role.address,
+      baseURI: baseURIUpdated,
+      metadataUpdatable: true,
+      tokensTransferable: false,
+      royaltiesBps: 250,
+      royaltiesAddress: admin_role.address
+    }, []);
+    await expect(nft.transferByOwner(caller.address, 1, 1)).to.be.reverted;
+    expect(await nft.balanceOf(caller.address, 1)).to.equal(0);
+  });
 
 
   it("It should deploy the contract, tokens are transferable, batch transfer, then update to non-transferable, transfer should fail, check roles", async () => {
     const nft = await deploy();
     const URI = "default";
     const URI2 = "default2";
-    await nft.mintByOwnerBatch([admin_role.address, thirdparty.address], [1,2], [3,4], [URI, URI2]);
-    expect(await nft.balanceOf(admin_role.address, 1)).to.equal(3);
-    expect(await nft.balanceOf(thirdparty.address, 2)).to.equal(4);
+    await nft.mintByOwnerBatch([admin_role.address, admin_role.address], [1,2], [5,4], [URI, URI2]);
+    expect(await nft.balanceOf(admin_role.address, 1)).to.equal(5);
+    expect(await nft.balanceOf(admin_role.address, 2)).to.equal(4);
 
-    await expect(nft.connect(update_contract_role).transferByOwnerBatch([caller.address, receiver.address], [1,1], [1,1])).to.be.reverted;
-    await expect(nft.connect(update_token_role).transferByOwnerBatch([caller.address, receiver.address], [1,1], [1,1])).to.be.reverted;
-    await expect(nft.connect(mint_role).transferByOwnerBatch([caller.address, receiver.address], [1,1], [1,1])).to.be.reverted;
-    await expect(nft.connect(burn_role).transferByOwnerBatch([caller.address, receiver.address], [1,1], [1,1])).to.be.reverted;
-    await expect(nft.connect(thirdparty).transferByOwnerBatch([caller.address, receiver.address], [1,1], [1,1])).to.be.reverted;
+    await expect(nft.connect(update_contract_role).transferByOwnerBatch([caller.address, receiver.address], [1,2], [1,1])).to.be.reverted;
+    await expect(nft.connect(update_token_role).transferByOwnerBatch([caller.address, receiver.address], [1,2], [1,1])).to.be.reverted;
+    await expect(nft.connect(mint_role).transferByOwnerBatch([caller.address, receiver.address], [1,2], [1,1])).to.be.reverted;
+    await expect(nft.connect(burn_role).transferByOwnerBatch([caller.address, receiver.address], [1,2], [1,1])).to.be.reverted;
+    await expect(nft.connect(thirdparty).transferByOwnerBatch([caller.address, receiver.address], [1,2], [1,1])).to.be.reverted;
 
-    // await nft.transferByOwnerBatch([caller.address, receiver.address], [1,1], [1,1]);
-    // await nft.connect(transfer_role).transferByOwnerBatch([caller.address, receiver.address], [1,1], [1,1]);
-    // await nft.connect(admin_role).transferByOwnerBatch([caller.address, receiver.address], [1,1], [1,1]);
+    await nft.transferByOwnerBatch([receiver.address, receiver.address], [1,2], [1,1]);
+    await nft.connect(transfer_role).transferByOwnerBatch([receiver.address, receiver.address], [1,2], [1,1]);
+    await nft.connect(admin_role).transferByOwnerBatch([receiver.address, receiver.address], [1,2], [1,1]);
 
-    // expect(await nft.balanceOf(owner.address, 1)).to.equal(1);
-    // expect(await nft.balanceOf(caller.address, 1)).to.equal(1);
-    // expect(await nft.balanceOf(receiver.address, 1)).to.equal(1);
+    expect(await nft.balanceOf(admin_role.address, 1)).to.equal(2);
+    expect(await nft.balanceOf(admin_role.address, 2)).to.equal(1);
 
-    // await nft.update('', false, true, owner.address, 250);
-    // await expect(nft.transferByOwnerBatch([receiver.address], [1], [1])).to.be.reverted;
-    // expect(await nft.balanceOf(receiver.address, 1)).to.equal(1);
+    expect(await nft.balanceOf(receiver.address, 1)).to.equal(3);
+    expect(await nft.balanceOf(receiver.address, 2)).to.equal(3);
+
+    await nft.update({
+      owner: admin_role.address,
+      baseURI: baseURIUpdated,
+      metadataUpdatable: true,
+      tokensTransferable: false,
+      royaltiesBps: 250,
+      royaltiesAddress: admin_role.address
+    }, []);
+    await expect(nft.transferByOwnerBatch([receiver.address], [1], [1])).to.be.reverted;
   });
 
 

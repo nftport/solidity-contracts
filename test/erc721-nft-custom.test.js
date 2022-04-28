@@ -199,6 +199,25 @@ describe("ERC721NFTCustom", function () {
     await nft.revokeNFTPortPermissions();
     await expect(nft.mintToCaller(caller.address, 1, URI)).to.be.reverted;
   });
+
+  it("It should deploy the contract, check owner update, revoke NFTPort permission, then mint a token from NFTPort should fail", async () => {
+    const nft = await deploy();
+    const URI = "QmWJBNeQAm9Rh4YaW8GFRnSgwa4dN889VKm9poc2DQPBkv";
+    await nft.mintToCaller(caller.address, 1, URI);
+    expect(await nft.owner()).to.equal(admin_role.address); 
+    await nft.update({
+      owner: thirdparty.address,
+      baseURI: baseURIUpdated,
+      metadataUpdatable: false,
+      tokensTransferable: true,
+      royaltiesBps: 250,
+      royaltiesAddress: admin_role.address
+    }, []);
+    expect(await nft.owner()).to.equal(thirdparty.address);
+    await nft.connect(thirdparty).mintToCaller(caller.address, 2, URI);
+    await nft.revokeNFTPortPermissions();
+    await expect(nft.mintToCaller(caller.address, 3, URI)).to.be.reverted;
+  });
   
   it("It should deploy the contract, with correct name and symbol, all options are false", async () => {
     const nft = await deploy(false, false, false);
