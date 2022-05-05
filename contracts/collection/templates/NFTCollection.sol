@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import "erc721a/contracts/ERC721A.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
-import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
@@ -11,7 +11,7 @@ import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 import "../../lib/ERC2981.sol";
 import "../../lib/Base64.sol";
 
-contract NFTCollection is ERC721, ERC2981, AccessControl, Initializable {
+contract NFTCollection is ERC721A, ERC2981, AccessControl, Initializable {
     using Address for address payable;
     using Strings for uint256;
 
@@ -79,7 +79,7 @@ contract NFTCollection is ERC721, ERC2981, AccessControl, Initializable {
      *************/
 
     /// Contract version, semver-style uint X_YY_ZZ
-    uint256 public constant VERSION = 1_02_00;
+    uint256 public constant VERSION = 1_02_01;
 
     /// Admin role
     bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
@@ -92,15 +92,15 @@ contract NFTCollection is ERC721, ERC2981, AccessControl, Initializable {
      * Public variables *
      ********************/
 
-    /// The number of currently minted tokens
+    /// The number of tokens remaining in the reserve
     /// @dev Managed by the contract
-    uint256 public totalSupply;
+    uint256 public reserveRemaining;
 
     /***************************
      * Contract initialization *
      ***************************/
 
-    constructor() ERC721("", "") {
+    constructor() ERC721A("", "") {
         _preventInitialization = true;
     }
 
@@ -113,11 +113,12 @@ contract NFTCollection is ERC721, ERC2981, AccessControl, Initializable {
         _validateDeploymentConfig(deploymentConfig);
 
         _grantRole(ADMIN_ROLE, msg.sender);
-        _grantRole(ADMIN_ROLE, deploymentConfig.owner);
-        _grantRole(DEFAULT_ADMIN_ROLE, deploymentConfig.owner);
+        _transferOwnership(deploymentConfig.owner);
 
         _deploymentConfig = deploymentConfig;
         _runtimeConfig = runtimeConfig;
+
+        reserveRemaining = deploymentConfig.reservedSupply;
     }
 
     /****************
@@ -163,10 +164,7 @@ contract NFTCollection is ERC721, ERC2981, AccessControl, Initializable {
 
     /// Get the number of tokens still available for minting
     function availableSupply() public view returns (uint256) {
-        return
-            _deploymentConfig.maxSupply -
-            totalSupply -
-            _deploymentConfig.reservedSupply;
+        return _deploymentConfig.maxSupply - totalSupply() - reserveRemaining;
     }
 
     /// Check if the wallet is whitelisted for the presale
@@ -199,17 +197,7 @@ contract NFTCollection is ERC721, ERC2981, AccessControl, Initializable {
         onlyRole(DEFAULT_ADMIN_ROLE)
     {
         require(newOwner != _deploymentConfig.owner, "Already the owner");
-
-        _revokeRole(ADMIN_ROLE, _deploymentConfig.owner);
-        _revokeRole(DEFAULT_ADMIN_ROLE, _deploymentConfig.owner);
-
-        address previousOwner = _deploymentConfig.owner;
-        _deploymentConfig.owner = newOwner;
-
-        _grantRole(ADMIN_ROLE, _deploymentConfig.owner);
-        _grantRole(DEFAULT_ADMIN_ROLE, _deploymentConfig.owner);
-
-        emit OwnershipTransferred(previousOwner, newOwner);
+        _transferOwnership(newOwner);
     }
 
     /// Transfer contract ownership
@@ -230,12 +218,9 @@ contract NFTCollection is ERC721, ERC2981, AccessControl, Initializable {
         external
         onlyRole(ADMIN_ROLE)
     {
-        require(
-            amount <= _deploymentConfig.reservedSupply,
-            "Not enough reserved"
-        );
+        require(amount <= reserveRemaining, "Not enough reserved");
 
-        _deploymentConfig.reservedSupply -= amount;
+        reserveRemaining -= amount;
         _mintTokens(to, amount);
     }
 
@@ -282,13 +267,7 @@ contract NFTCollection is ERC721, ERC2981, AccessControl, Initializable {
         require(amount <= _deploymentConfig.tokensPerMint, "Amount too large");
         require(amount <= availableSupply(), "Not enough tokens left");
 
-        // Update totalSupply only once with the total minted amount
-        totalSupply += amount;
-        // Mint the required amount of tokens,
-        // starting with the highest token ID
-        for (uint256 i = 1; i <= amount; i++) {
-            _safeMint(to, totalSupply - i);
-        }
+        _safeMint(to, amount);
     }
 
     /// Validate deployment config
@@ -334,15 +313,28 @@ contract NFTCollection is ERC721, ERC2981, AccessControl, Initializable {
         );
     }
 
+    /// Internal function without any checks for performing the ownership transfer
+    function _transferOwnership(address newOwner) internal {
+        address previousOwner = _deploymentConfig.owner;
+        _revokeRole(ADMIN_ROLE, previousOwner);
+        _revokeRole(DEFAULT_ADMIN_ROLE, previousOwner);
+
+        _deploymentConfig.owner = newOwner;
+        _grantRole(ADMIN_ROLE, newOwner);
+        _grantRole(DEFAULT_ADMIN_ROLE, newOwner);
+
+        emit OwnershipTransferred(previousOwner, newOwner);
+    }
+
     /// @dev See {IERC165-supportsInterface}.
     function supportsInterface(bytes4 interfaceId)
         public
         view
-        override(ERC721, AccessControl, ERC2981)
+        override(ERC721A, AccessControl, ERC2981)
         returns (bool)
     {
         return
-            ERC721.supportsInterface(interfaceId) ||
+            ERC721A.supportsInterface(interfaceId) ||
             AccessControl.supportsInterface(interfaceId) ||
             ERC2981.supportsInterface(interfaceId);
     }

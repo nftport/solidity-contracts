@@ -24,6 +24,7 @@
     "@openzeppelin/contracts": "^4.5.0",
     "dotenv": "^10.0.0",
     "ethlint": "^1.2.5",
-    "solhint": "^3.3.7"
+    "solhint": "^3.3.7",
+    "erc721a": "^3.2.0"
   }
 }

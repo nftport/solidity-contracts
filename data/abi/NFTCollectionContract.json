@@ -100,6 +100,66 @@
     "type": "constructor"
   },
   {
+    "inputs": [],
+    "name": "ApprovalCallerNotOwnerNorApproved",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "ApprovalQueryForNonexistentToken",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "ApprovalToCurrentOwner",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "ApproveToCaller",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "BalanceQueryForZeroAddress",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "MintToZeroAddress",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "MintZeroQuantity",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "OwnerQueryForNonexistentToken",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "TransferCallerNotOwnerNorApproved",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "TransferFromIncorrectOwner",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "TransferToNonERC721ReceiverImplementer",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "TransferToZeroAddress",
+    "type": "error"
+  },
+  {
     "anonymous": false,
     "inputs": [
       {
@@ -954,6 +1014,19 @@
     "name": "reserveMint",
     "outputs": [],
     "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "reserveRemaining",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
     "type": "function"
   },
   {
