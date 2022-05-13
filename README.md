@@ -44,13 +44,9 @@ npm run deploy:{networkName}:{contractName}
 
 To redeploy a contract that hasn't changed, delete it's deployment file under `deployments/{networkName}/` and run `npm run deploy:{networkName}:{contractName}` again.
 
-### To get the contracts bytecode:
+### To get a deployed contract's address, ABI, etc:
 
-```
-npx hardhat compile
-```
-
-Check `artifacts/contracts/{contractName}.sol/{contractName}.json["bytecode"]`
+Check `deployments/{networkName}/{contractName}.json`
 
 ### Verification
 
