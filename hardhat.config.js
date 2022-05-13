@@ -7,7 +7,6 @@ const RINKEBY_GATEWAY_URL = process.env.RINKEBY_GATEWAY_URL;
 
 const ETHEREUM_PRIVATE_KEY_MAINNET = process.env.ETHEREUM_PRIVATE_KEY_MAINNET;
 
-require("hardhat-abi-exporter");
 require("solidity-coverage");
 require("@nomiclabs/hardhat-waffle");
 require("hardhat-deploy");
