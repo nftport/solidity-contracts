@@ -42,6 +42,8 @@ npm run deploy:{networkName}:{contractName}
 - `mumbai` (Polygon testnet)
 - `rinkeby` (Ethereum testnet)
 
+To redeploy a contract that hasn't changed, delete it's deployment file under `deployments/{networkName}/` and run `npm run deploy:{networkName}:{contractName}` again.
+
 ### To get the contracts bytecode:
 
 ```
