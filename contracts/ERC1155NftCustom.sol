@@ -136,7 +136,7 @@ contract ERC1155NFTCustom is ERC1155, GranularRoles {
             emit PermanentURIGlobal();
         }
 
-        _updateRoles(_owner, rolesAddresses);
+        _updateRoles(rolesAddresses);
     }
 
     function totalSupply (uint256 _id) public view returns (uint256) {

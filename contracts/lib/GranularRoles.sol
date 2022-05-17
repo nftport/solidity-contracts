@@ -28,8 +28,26 @@ abstract contract GranularRoles is AccessControl {
     mapping(bytes32 => address[]) internal _rolesAddressesIndexed; // Used to get roles enumeration
     mapping(bytes32 => bool) internal _rolesFrozen;
 
+    event OwnershipTransferred(
+        address indexed previousOwner,
+        address indexed newOwner
+    );
+
     function owner() public view returns (address) {
         return _owner;
+    }
+
+    function transferOwnership(address newOwner)
+        external
+        onlyRole(ADMIN_ROLE)
+    {
+        require(newOwner != _owner, "Already the owner");
+        require(msg.sender != _nftPort, "NFTPort cannot transfer ownership");
+        _revokeRole(ADMIN_ROLE, _owner);
+        address previousOwner = _owner;
+        _owner = newOwner;
+        _grantRole(ADMIN_ROLE, _owner);
+        emit OwnershipTransferred(previousOwner, newOwner);
     }
 
     function revokeNFTPortPermissions()
@@ -62,14 +80,7 @@ abstract contract GranularRoles is AccessControl {
         }
     }
 
-    function _updateRoles(address newOwner, RolesAddresses[] memory rolesAddresses) internal {
-        // TODO: make sure only admin role can change owner (not NFTPORT!!!)
-        if (newOwner != _owner) {
-            _revokeRole(ADMIN_ROLE, _owner);
-            _owner = newOwner;
-            _grantRole(ADMIN_ROLE, _owner);
-        }
-
+    function _updateRoles(RolesAddresses[] memory rolesAddresses) internal {
         for (uint256 roleIndex = 0; roleIndex < rolesAddresses.length; roleIndex++) {
             bytes32 role = rolesAddresses[roleIndex].role;
             require(_regularRoleValid(role), "GranularRoles: Invalid rolesAddresses");

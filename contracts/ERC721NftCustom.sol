@@ -179,7 +179,7 @@ contract ERC721NFTCustom is ERC721URIStorage, GranularRoles {
             emit PermanentURIGlobal();
         }
 
-        _updateRoles(_owner, rolesAddresses);
+        _updateRoles(rolesAddresses);
     }
 
     function totalSupply() public view virtual returns (uint256) {

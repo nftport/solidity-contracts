@@ -4,6 +4,8 @@ const keccak256 = require("keccak256");
 const baseURI = "ipfs://";
 const baseURIUpdated = "https://someipfs.com/mockhash/";
 
+const URI = "QmWJBNeQAm9Rh4YaW8GFRnSgwa4dN889VKm9poc2DQPBkv";
+
 const roles = {
   ADMIN_ROLE: keccak256("ADMIN_ROLE"),
   MINT_ROLE: keccak256("MINT_ROLE"),
@@ -179,7 +181,6 @@ describe("ERC1155NFTCustom", function () {
 
   it("It should deploy the contract, mint a token, and resolve to the right URI, check balanceOf, mint from wrong roles should fail", async () => {
     const nft = await deploy();
-    const URI = "QmWJBNeQAm9Rh4YaW8GFRnSgwa4dN889VKm9poc2DQPBkv";
     expect(await nft.balanceOf(caller.address, 12345)).to.equal(0);
     await nft.mintByOwner(caller.address, 12345, 5, URI);
     await nft.connect(admin_role).mintByOwner(caller.address, 2, 10, URI);
@@ -199,16 +200,6 @@ describe("ERC1155NFTCustom", function () {
 
   it("It should deploy the contract, revoke NFTPort permission, then mint a token from NFTPort should fail", async () => {
     const nft = await deploy();
-    const URI = "QmWJBNeQAm9Rh4YaW8GFRnSgwa4dN889VKm9poc2DQPBkv";
-    await nft.mintByOwner(caller.address, 1, 10, URI);
-    expect(await nft.owner()).to.equal(admin_role.address); 
-    await nft.update({
-      baseURI: baseURIUpdated,
-      metadataUpdatable: false,
-      tokensTransferable: true,
-      royaltiesBps: 250,
-      royaltiesAddress: admin_role.address
-    }, []);
     await nft.connect(admin_role).mintByOwner(thirdparty.address, 2, 10, URI);
     await nft.revokeNFTPortPermissions();
     await expect(nft.mintByOwner(caller.address, 3, 10, URI)).to.be.reverted;
@@ -225,7 +216,6 @@ describe("ERC1155NFTCustom", function () {
 
   it("It should deploy the contract, tokens uri's are initially frozen, mint token, trying to update URI should lead to error, freeze individual token should revert", async () => {
     const nft = await deploy(false);
-    const URI = "default";
     const URIUpdated = "updated";
     await nft.mintByOwner(caller.address, 1, 5, URI);
     expect(await nft.uri(1)).to.equal(baseURI + URI);
@@ -236,7 +226,6 @@ describe("ERC1155NFTCustom", function () {
 
   it("It should deploy the contract, tokens uri's are initially frozen, mint token, update baseURI should fail", async () => {
     const nft = await deploy(false);
-    const URI = "default";
     await nft.mintByOwner(caller.address, 1, 1, URI);
     expect(await nft.uri(1)).to.equal(baseURI + URI);    
     await expect(nft.update({
@@ -252,8 +241,6 @@ describe("ERC1155NFTCustom", function () {
 
   it("It should deploy the contract, tokens uri's are are initially updatable, mint token, update baseURI, check new token URI, empty baseURI is ok too; try different roles", async () => {
     const nft = await deploy();
-    const URI = "default";
-    const URIUpdated = "updated";
     await nft.mintByOwner(caller.address, 1, 1, URI);
     expect(await nft.uri(1)).to.equal(baseURI + URI);
     const updateInput = {
@@ -281,7 +268,6 @@ describe("ERC1155NFTCustom", function () {
 
   it("It should deploy the contract, tokens uri's are initially updatable, mint token, update URI with same value should fail, update URI with new value + freeze token, trying to update URI should lead to error, check roles", async () => {
     const nft = await deploy();
-    const URI = "default";
     const URIUpdated = "updated";
     await nft.mintByOwner(caller.address, 1, 1, URI);
     expect(await nft.uri(1)).to.equal(baseURI + URI);
@@ -307,7 +293,6 @@ describe("ERC1155NFTCustom", function () {
 
   it("It should deploy the contract, tokens uri's are initially updatable, mint token, update URI, freeze tokens globally, trying to update URI should lead to error, freeze all accessible only once", async () => {
     const nft = await deploy();
-    const URI = "default";
     const URIUpdated = "updated";
     const URIUpdated2 = "updated2";
     await nft.mintByOwner(caller.address, 1, 1, URI);
@@ -335,14 +320,12 @@ describe("ERC1155NFTCustom", function () {
 
   it("It should deploy the contract, tokens uri's are initially updatable, trying to update/freeze non-existing token should lead to error", async () => {
     const nft = await deploy();
-    const URI = "default";
     await expect(nft.updateTokenUri(1, URI, true)).to.be.reverted;
   });
 
 
   it("It should deploy the contract, mint token, burn it by owner, then trying to update/freeze non-existing token should lead to error, burn is possible once, check roles", async () => {
     const nft = await deploy();
-    const URI = "default";
     await nft.mintByOwner(admin_role.address, 1, 1, URI);
     await nft.mintByOwner(admin_role.address, 2, 1, URI);
     await nft.mintByOwner(admin_role.address, 3, 1, URI);
@@ -368,7 +351,6 @@ describe("ERC1155NFTCustom", function () {
 
   it("It should deploy the contract, mint token, burn it, check totalSupply on all stages", async () => {
     const nft = await deploy();
-    const URI = "default";
     expect(await nft.totalSupply(1)).to.equal(0);
     await nft.mintByOwner(admin_role.address, 1, 2, URI);
     expect(await nft.totalSupply(1)).to.equal(2);
@@ -378,7 +360,6 @@ describe("ERC1155NFTCustom", function () {
 
   it("It should deploy the contract, tokens are transferable, transfer, then update to non-transferable, transfer should fail", async () => {
     const nft = await deploy();
-    const URI = "default";
     await nft.mintByOwner(admin_role.address, 1, 2, URI);
     expect(await nft.balanceOf(admin_role.address, 1)).to.equal(2);
     await nft.transferByOwner(receiver.address, 1, 1);
@@ -398,7 +379,6 @@ describe("ERC1155NFTCustom", function () {
 
   it("It should deploy the contract, tokens are transferable, batch transfer, then update to non-transferable, transfer should fail, check roles", async () => {
     const nft = await deploy();
-    const URI = "default";
     const URI2 = "default2";
     await nft.mintByOwnerBatch([admin_role.address, admin_role.address], [1,2], [5,4], [URI, URI2]);
     expect(await nft.balanceOf(admin_role.address, 1)).to.equal(5);
@@ -434,7 +414,6 @@ describe("ERC1155NFTCustom", function () {
 
   it("It should deploy the contract, mintBatch tokens, batchBurns them (partially), check totalSupply on all stages, check roles", async () => {
     const nft = await deploy();
-    const URI = "default";
     const URI2 = "default2";
     expect(await nft.totalSupply(1)).to.equal(0);
     await nft.mintByOwnerBatch([admin_role.address, admin_role.address], [1,2], [2,3], [URI, URI2]);
@@ -471,7 +450,6 @@ describe("ERC1155NFTCustom", function () {
 
   it("It should deploy the contract, revert mintBatch w/insufficient params", async () => {
     const nft = await deploy();
-    const URI = "default";
     const URI2 = "default2";
     await expect(nft.mintByOwnerBatch([caller.address, caller.address], [1,2], [2], [URI, URI2])).to.be.reverted;
     await expect(nft.mintByOwnerBatch([caller.address, caller.address], [1,2], [0,1], [URI, URI2])).to.be.reverted;
@@ -481,7 +459,6 @@ describe("ERC1155NFTCustom", function () {
 
   it("Should deploy the contract and return correct ERC2981 royalties info", async () => {
     const nft = await deploy();
-    const URI = "default";
     await nft.mintByOwner(admin_role.address, 1, 1, URI);
     const [royaltiesAddress, royaltiesFee] = await nft.royaltyInfo(1, 10000);
     expect(royaltiesAddress).to.equal(admin_role.address);
