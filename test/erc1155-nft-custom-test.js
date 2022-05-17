@@ -149,6 +149,14 @@ describe("ERC1155NFTCustom", function () {
         frozen: false
       },
     ])).to.be.reverted;
+    // update_contract_role cannot change permissions
+    await expect(nft.connect(update_contract_role).update(newConfig, [
+      {
+        role: roles.BURN_ROLE,
+        addresses: [mint_role.address, mint2_role.address],
+        frozen: false
+      },
+    ])).to.be.reverted;
     expect(await nft.hasRole(roles.BURN_ROLE, burn_role.address)).to.equal(true);
     // no roles; freeze
     await nft.update(newConfig, [

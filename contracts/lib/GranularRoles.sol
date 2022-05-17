@@ -81,19 +81,22 @@ abstract contract GranularRoles is AccessControl {
     }
 
     function _updateRoles(RolesAddresses[] memory rolesAddresses) internal {
-        for (uint256 roleIndex = 0; roleIndex < rolesAddresses.length; roleIndex++) {
-            bytes32 role = rolesAddresses[roleIndex].role;
-            require(_regularRoleValid(role), "GranularRoles: Invalid rolesAddresses");
-            require(!_rolesFrozen[role], "GranularRoles: One of roles is frozen");
-            for(uint256 addressIndex = 0; addressIndex < _rolesAddressesIndexed[role].length; addressIndex++) {
-                _revokeRole(role, _rolesAddressesIndexed[role][addressIndex]);
-            }
-            delete _rolesAddressesIndexed[role];
-            for(uint256 addressIndex = 0; addressIndex < rolesAddresses[roleIndex].addresses.length; addressIndex++) {
-                _grantRole(role, rolesAddresses[roleIndex].addresses[addressIndex]);
-            }
-            if (rolesAddresses[roleIndex].frozen) {
-                _rolesFrozen[role] = true;
+        if (rolesAddresses.length > 0) {
+            require(hasRole(ADMIN_ROLE, msg.sender), "Granular roles: only ADMIN_ROLE can change permissions");
+            for (uint256 roleIndex = 0; roleIndex < rolesAddresses.length; roleIndex++) {
+                bytes32 role = rolesAddresses[roleIndex].role;
+                require(_regularRoleValid(role), "GranularRoles: Invalid rolesAddresses");
+                require(!_rolesFrozen[role], "GranularRoles: One of roles is frozen");
+                for(uint256 addressIndex = 0; addressIndex < _rolesAddressesIndexed[role].length; addressIndex++) {
+                    _revokeRole(role, _rolesAddressesIndexed[role][addressIndex]);
+                }
+                delete _rolesAddressesIndexed[role];
+                for(uint256 addressIndex = 0; addressIndex < rolesAddresses[roleIndex].addresses.length; addressIndex++) {
+                    _grantRole(role, rolesAddresses[roleIndex].addresses[addressIndex]);
+                }
+                if (rolesAddresses[roleIndex].frozen) {
+                    _rolesFrozen[role] = true;
+                }
             }
         }
     }
