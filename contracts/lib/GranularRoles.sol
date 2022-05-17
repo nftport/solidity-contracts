@@ -63,6 +63,7 @@ abstract contract GranularRoles is AccessControl {
     }
 
     function _updateRoles(address newOwner, RolesAddresses[] memory rolesAddresses) internal {
+        // TODO: make sure only admin role can change owner (not NFTPORT!!!)
         if (newOwner != _owner) {
             _revokeRole(ADMIN_ROLE, _owner);
             _owner = newOwner;

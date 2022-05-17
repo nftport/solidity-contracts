@@ -55,7 +55,7 @@ contract ERC721NFTCustom is ERC721URIStorage, GranularRoles {
 
         baseURI = runtimeConfig.baseURI;
 
-        _initRoles(runtimeConfig.owner, rolesAddresses);
+        _initRoles(deploymentConfig.owner, rolesAddresses);
     }
 
     function supportsInterface(bytes4 interfaceId)
@@ -179,7 +179,7 @@ contract ERC721NFTCustom is ERC721URIStorage, GranularRoles {
             emit PermanentURIGlobal();
         }
 
-        _updateRoles(newConfig.owner, rolesAddresses);
+        _updateRoles(_owner, rolesAddresses);
     }
 
     function totalSupply() public view virtual returns (uint256) {

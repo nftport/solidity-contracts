@@ -50,7 +50,7 @@ contract ERC1155NFTCustom is ERC1155, GranularRoles {
         name = deploymentConfig.name;
         symbol = deploymentConfig.symbol;
 
-        _initRoles(runtimeConfig.owner, rolesAddresses);
+        _initRoles(deploymentConfig.owner, rolesAddresses);
     }
 
     function setURI(string memory _newURI) public onlyRole(UPDATE_CONTRACT_ROLE) {
@@ -136,7 +136,7 @@ contract ERC1155NFTCustom is ERC1155, GranularRoles {
             emit PermanentURIGlobal();
         }
 
-        _updateRoles(newConfig.owner, rolesAddresses);
+        _updateRoles(_owner, rolesAddresses);
     }
 
     function totalSupply (uint256 _id) public view returns (uint256) {

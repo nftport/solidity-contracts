@@ -37,11 +37,11 @@ const deploy = async(
   const deploymentConfig = {
     name: "NFTPort",
     symbol: "NFT",
+    owner: admin_role.address,
     tokensBurnable
   }
   
   const runtimeConfig = {
-    owner: admin_role.address,
     baseURI: overrideBaseURI !== null ? overrideBaseURI : baseURI,
     metadataUpdatable,
     tokensTransferable,
@@ -197,21 +197,19 @@ describe("ERC1155NFTCustom", function () {
     await expect(nft.connect(thirdparty).mintByOwner(caller.address, 1, 10, URI)).to.be.reverted;
   });
 
-  it("It should deploy the contract, check owner update, revoke NFTPort permission, then mint a token from NFTPort should fail", async () => {
+  it("It should deploy the contract, revoke NFTPort permission, then mint a token from NFTPort should fail", async () => {
     const nft = await deploy();
     const URI = "QmWJBNeQAm9Rh4YaW8GFRnSgwa4dN889VKm9poc2DQPBkv";
     await nft.mintByOwner(caller.address, 1, 10, URI);
     expect(await nft.owner()).to.equal(admin_role.address); 
     await nft.update({
-      owner: thirdparty.address,
       baseURI: baseURIUpdated,
       metadataUpdatable: false,
       tokensTransferable: true,
       royaltiesBps: 250,
       royaltiesAddress: admin_role.address
     }, []);
-    expect(await nft.owner()).to.equal(thirdparty.address);
-    await nft.connect(thirdparty).mintByOwner(thirdparty.address, 2, 10, URI);
+    await nft.connect(admin_role).mintByOwner(thirdparty.address, 2, 10, URI);
     await nft.revokeNFTPortPermissions();
     await expect(nft.mintByOwner(caller.address, 3, 10, URI)).to.be.reverted;
   });

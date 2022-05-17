@@ -8,15 +8,15 @@ library Config {
         string name;
         // Symbol of the NFT contract.
         string symbol;
+        // The contract owner address. If you wish to own the contract, then set it as your wallet address.
+        // This is also the wallet that can manage the contract on NFT marketplaces. 
+        address owner;
         // If true, tokens may be burned by owner. Cannot be changed later.
         bool tokensBurnable;
     }
 
     /// Updatable by admins and owner
     struct Runtime {
-        // The contract owner address. If you wish to own the contract, then set it as your wallet address.
-        // This is also the wallet that can manage the contract on NFT marketplaces. 
-        address owner;
         // Metadata base URI for tokens, NFTs minted in this contract will have metadata URI of `baseURI` + `tokenID`.
         // Set this to reveal token metadata.
         string baseURI;

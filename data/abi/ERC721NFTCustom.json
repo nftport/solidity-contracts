@@ -14,6 +14,11 @@
             "type": "string"
           },
           {
+            "internalType": "address",
+            "name": "owner",
+            "type": "address"
+          },
+          {
             "internalType": "bool",
             "name": "tokensBurnable",
             "type": "bool"
@@ -25,11 +30,6 @@
       },
       {
         "components": [
-          {
-            "internalType": "address",
-            "name": "owner",
-            "type": "address"
-          },
           {
             "internalType": "string",
             "name": "baseURI",
@@ -983,11 +983,6 @@
     "inputs": [
       {
         "components": [
-          {
-            "internalType": "address",
-            "name": "owner",
-            "type": "address"
-          },
           {
             "internalType": "string",
             "name": "baseURI",
