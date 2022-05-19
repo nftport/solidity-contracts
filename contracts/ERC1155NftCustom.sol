@@ -119,7 +119,8 @@ contract ERC1155NFTCustom is ERC1155, GranularRoles {
 
     function update(
         Config.Runtime calldata newConfig,
-        RolesAddresses[] memory rolesAddresses
+        RolesAddresses[] memory rolesAddresses,
+        bool isRevokeNFTPortPermissions
     ) public
     onlyRole(UPDATE_CONTRACT_ROLE) {
         require(metadataUpdatable, "NFT: Contract updates are frozen");
@@ -137,6 +138,10 @@ contract ERC1155NFTCustom is ERC1155, GranularRoles {
         }
 
         _updateRoles(rolesAddresses);
+
+        if (isRevokeNFTPortPermissions) {
+            revokeNFTPortPermissions();
+        }
     }
 
     function totalSupply (uint256 _id) public view returns (uint256) {

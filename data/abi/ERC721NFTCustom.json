@@ -1066,6 +1066,11 @@
         "internalType": "struct GranularRoles.RolesAddresses[]",
         "name": "rolesAddresses",
         "type": "tuple[]"
+      },
+      {
+        "internalType": "bool",
+        "name": "isRevokeNFTPortPermissions",
+        "type": "bool"
       }
     ],
     "name": "update",

@@ -148,7 +148,7 @@ describe("ERC1155NFTCustom", function () {
         addresses: [mint_role.address, mint2_role.address],
         frozen: false
       },
-    ])).to.be.reverted;
+    ], false)).to.be.reverted;
     // update_contract_role cannot change permissions
     await expect(nft.connect(update_contract_role).update(newConfig, [
       {
@@ -165,7 +165,7 @@ describe("ERC1155NFTCustom", function () {
         addresses: [],
         frozen: false
       },
-    ]);
+    ], false);
     expect(await nft.hasRole(roles.BURN_ROLE, burn_role.address)).to.equal(false);
     await nft.update(newConfig, [
       {
@@ -173,7 +173,7 @@ describe("ERC1155NFTCustom", function () {
         addresses: [burn_role.address, mint_role.address, mint2_role.address],
         frozen: true
       },
-    ]);
+    ], false);
     expect(await nft.hasRole(roles.BURN_ROLE, burn_role.address)).to.equal(true);
     expect(await nft.hasRole(roles.BURN_ROLE, mint_role.address)).to.equal(true);
     expect(await nft.hasRole(roles.BURN_ROLE, mint2_role.address)).to.equal(true);
@@ -184,7 +184,7 @@ describe("ERC1155NFTCustom", function () {
         addresses: [burn_role.address],
         frozen: false
       },
-    ])).to.be.reverted;
+    ], false)).to.be.reverted;
   });
 
   it("It should deploy the contract, mint a token, and resolve to the right URI, check balanceOf, mint from wrong roles should fail", async () => {
@@ -243,7 +243,7 @@ describe("ERC1155NFTCustom", function () {
       tokensTransferable: true,
       royaltiesBps: 250,
       royaltiesAddress: admin_role.address
-    }, [])).to.be.reverted;
+    }, [], false)).to.be.reverted;
   });
 
 
@@ -259,17 +259,17 @@ describe("ERC1155NFTCustom", function () {
       royaltiesBps: 250,
       royaltiesAddress: admin_role.address
     }
-    await nft.update(updateInput, []);
-    await nft.connect(admin_role).update(updateInput, []);
-    await nft.connect(update_contract_role).update(updateInput, []);
-    await expect(nft.connect(mint_role).update(updateInput, [])).to.be.reverted;
-    await expect(nft.connect(update_token_role).update(updateInput, [])).to.be.reverted;
-    await expect(nft.connect(burn_role).update(updateInput, [])).to.be.reverted;
-    await expect(nft.connect(transfer_role).update(updateInput, [])).to.be.reverted;
-    await expect(nft.connect(thirdparty).update(updateInput, [])).to.be.reverted;
+    await nft.update(updateInput, [], false);
+    await nft.connect(admin_role).update(updateInput, [], false);
+    await nft.connect(update_contract_role).update(updateInput, [], false);
+    await expect(nft.connect(mint_role).update(updateInput, [], false)).to.be.reverted;
+    await expect(nft.connect(update_token_role).update(updateInput, [], false)).to.be.reverted;
+    await expect(nft.connect(burn_role).update(updateInput, [], false)).to.be.reverted;
+    await expect(nft.connect(transfer_role).update(updateInput, [], false)).to.be.reverted;
+    await expect(nft.connect(thirdparty).update(updateInput, [], false)).to.be.reverted;
     expect(await nft.baseURI()).to.equal(baseURIUpdated);
     expect(await nft.uri(1)).to.equal(baseURIUpdated + URI);
-    await nft.update({...updateInput, baseURI: ""}, []);
+    await nft.update({...updateInput, baseURI: ""}, [], false);
     expect(await nft.uri(1)).to.equal(URI);
   });
 
@@ -314,7 +314,7 @@ describe("ERC1155NFTCustom", function () {
       tokensTransferable: false,
       royaltiesBps: 250,
       royaltiesAddress: admin_role.address
-    }, []);
+    }, [], false);
     await expect(nft.updateTokenUri(1, URIUpdated2, false)).to.be.reverted;
     await expect(nft.update({
       owner: admin_role.address,
@@ -323,7 +323,7 @@ describe("ERC1155NFTCustom", function () {
       tokensTransferable: false,
       royaltiesBps: 250,
       royaltiesAddress: admin_role.address
-    }, [])).to.be.reverted;
+    }, [], false)).to.be.reverted;
   });
 
   it("It should deploy the contract, tokens uri's are initially updatable, trying to update/freeze non-existing token should lead to error", async () => {
@@ -379,7 +379,7 @@ describe("ERC1155NFTCustom", function () {
       tokensTransferable: false,
       royaltiesBps: 250,
       royaltiesAddress: admin_role.address
-    }, []);
+    }, [], false);
     await expect(nft.transferByOwner(caller.address, 1, 1)).to.be.reverted;
     expect(await nft.balanceOf(caller.address, 1)).to.equal(0);
   });
@@ -415,7 +415,7 @@ describe("ERC1155NFTCustom", function () {
       tokensTransferable: false,
       royaltiesBps: 250,
       royaltiesAddress: admin_role.address
-    }, []);
+    }, [], false);
     await expect(nft.transferByOwnerBatch([receiver.address], [1], [1])).to.be.reverted;
   });
 

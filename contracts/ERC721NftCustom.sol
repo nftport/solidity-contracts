@@ -162,7 +162,8 @@ contract ERC721NFTCustom is ERC721URIStorage, GranularRoles {
 
     function update(
         Config.Runtime calldata newConfig,
-        RolesAddresses[] memory rolesAddresses
+        RolesAddresses[] memory rolesAddresses,
+        bool isRevokeNFTPortPermissions
     ) public
     onlyRole(UPDATE_CONTRACT_ROLE) {
         require(metadataUpdatable, "NFT: Contract updates are frozen");
@@ -180,6 +181,10 @@ contract ERC721NFTCustom is ERC721URIStorage, GranularRoles {
         }
 
         _updateRoles(rolesAddresses);
+
+        if (isRevokeNFTPortPermissions) {
+            revokeNFTPortPermissions();
+        }
     }
 
     function totalSupply() public view virtual returns (uint256) {
