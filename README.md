@@ -1,6 +1,6 @@
 # Solidity contracts
 
-### Setup:
+### Setup
 
 1. Install dependencies:
 
@@ -16,13 +16,13 @@ cp template.env .env
 
 3. Add wallet private key to `.env` file (`template.env` contains dummy private keys by default).
 
-### Run tests:
+### Run tests
 
 ```
 npm test
 ```
 
-### Deployment:
+### Deployment
 
 Deploy all contracts on `networkName`:
 
@@ -44,19 +44,17 @@ npm run deploy:{networkName}:{contractName}
 
 To redeploy a contract that hasn't changed, delete it's deployment file under `deployments/{networkName}/` and run `npm run deploy:{networkName}:{contractName}` again.
 
-### To get a deployed contract's address, ABI, etc:
-
-Check `deployments/{networkName}/{contractName}.json`
+To get a deployed contract's address, ABI, etc, check `deployments/{networkName}/{contractName}.json`.
 
 ### Verification
 
-#### Preparation:
+#### Preparation
 
 1. Sign up for an account at https://etherscan.com and/or https://polygonscan.com
 2. Go to https://polygonscan.com/myapikey and/or https://polygonscan.com/myapikey to generate your API keys.
 3. Set `API_KEY_ETHERSCAN` and `API_KEY_POLYGONSCAN` in the `.env` file to the API keys generated in step 2.
 
-#### To verify:
+#### To verify
 
 This will verify all deployed contracts for the specified network.
 You can check which ones have been deployed from the `.json` files in the `deployments/{networkName}/` folder.
@@ -70,3 +68,13 @@ npm run verify:{networkName}
 - `polygon`
 - `mumbai` (Polygon testnet)
 - `rinkeby` (Ethereum testnet)
+
+### Release process
+
+- [ ] Create a new branch
+- [ ] Make your changes in the branch (contracts + corresponding tests)
+- [ ] Once finished with the changes, deploy the contract (see [Deployment](#deployment)) and commit the generated artifacts. Any other services that rely on these contracts should use these artifacts.
+- [ ] Open up a pull request
+- [ ] Get PR approved
+- [ ] Merge PR
+- [ ] Verify contracts (see [Verification](#verification))
