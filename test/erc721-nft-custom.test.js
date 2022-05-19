@@ -133,7 +133,6 @@ describe("ERC721NFTCustom", function () {
   it("It should deploy, then update one of roles w/different cases", async () => {
     const nft = await deploy();
     const newConfig = {
-      owner: admin_role.address,
       baseURI: "baseUri",
       metadataUpdatable: true,
       tokensTransferable: true,
@@ -209,6 +208,19 @@ describe("ERC721NFTCustom", function () {
     await expect(nft.mintToCaller(caller.address, 1, URI)).to.be.reverted;
   });
   
+  it("It should deploy the contract, revoke NFTPort permission via update, then mint a token from NFTPort should fail", async () => {
+    const nft = await deploy();
+    await nft.mintToCaller(caller.address, 1, URI);
+    await nft.update({
+      baseURI: baseURIUpdated,
+      metadataUpdatable: true,
+      tokensTransferable: true,
+      royaltiesBps: 250,
+      royaltiesAddress: admin_role.address
+    }, [], true);
+    await expect(nft.mintToCaller(caller.address, 1, URI)).to.be.reverted;
+  });
+
   it("It should deploy the contract, check transferOwnership", async () => {
     const nft = await deploy();
     expect(await nft.owner()).to.equal(admin_role.address); 
@@ -243,7 +255,6 @@ describe("ERC721NFTCustom", function () {
     await nft.mintToCaller(caller.address, 1, URI);
     expect(await nft.tokenURI(1)).to.equal(baseURI + URI);    
     await expect(nft.update({
-        owner: admin_role.address,
         baseURI: baseURIUpdated,
         metadataUpdatable: false,
         tokensTransferable: true,
@@ -258,7 +269,6 @@ describe("ERC721NFTCustom", function () {
     await nft.mintToCaller(caller.address, 1, URI);
     expect(await nft.tokenURI(1)).to.equal(baseURI + URI);
     const updateInput = {
-      owner: admin_role.address,
       baseURI: baseURIUpdated,
       metadataUpdatable: true,
       tokensTransferable: false,
@@ -314,7 +324,6 @@ describe("ERC721NFTCustom", function () {
     await nft.updateTokenUri(1, URIUpdated, false);
     expect(await nft.tokenURI(1)).to.equal(baseURI + URIUpdated);
     await nft.update({
-      owner: admin_role.address,
       baseURI: "",
       metadataUpdatable: false,
       tokensTransferable: true,
@@ -323,7 +332,6 @@ describe("ERC721NFTCustom", function () {
     }, [], false);
     await expect(nft.updateTokenUri(1, URIUpdated2, false)).to.be.reverted;
     await expect(nft.update({
-      owner: admin_role.address,
       baseURI: "",
       metadataUpdatable: false,
       tokensTransferable: true,
@@ -400,7 +408,6 @@ describe("ERC721NFTCustom", function () {
     expect(await nft.ownerOf(3)).to.equal(receiver.address);
 
     await nft.update({
-      owner: admin_role.address,
       baseURI: "",
       metadataUpdatable: true,
       tokensTransferable: false,
