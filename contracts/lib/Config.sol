@@ -30,6 +30,5 @@ library Config {
         uint256 royaltiesBps;
         // Address for royalties
         address royaltiesAddress;
-        // List of secondary (non-admin) roles; can be empty
     } 
 }
