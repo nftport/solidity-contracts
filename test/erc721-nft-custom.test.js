@@ -41,7 +41,7 @@ const deploy = async(
     owner: admin_role.address,
     tokensBurnable
   }
-  
+
   const runtimeConfig = {
     baseURI: overrideBaseURI !== null ? overrideBaseURI : baseURI,
     metadataUpdatable,
@@ -114,7 +114,7 @@ describe("ERC721NFTCustom", function () {
         frozen: false
       },
     ])).to.be.reverted;
-    // role w/no address; then same w/address - wrong input, but should be processed correctly, 
+    // role w/no address; then same w/address - wrong input, but should be processed correctly,
     // as freeze applies after initialization
     await deploy(true, true, true, null, [
       {
@@ -130,6 +130,37 @@ describe("ERC721NFTCustom", function () {
     ]);
   });
 
+  it("It should deploy, then let you assign and unassign roles", async () => {
+    const nft = await deploy();
+    const newConfig = {
+      baseURI: "baseUri",
+      metadataUpdatable: true,
+      tokensTransferable: true,
+      royaltiesBps: 250,
+      royaltiesAddress: admin_role.address
+    };
+
+    await expect(nft.update(newConfig, [
+      {
+        role: roles.MINT_ROLE,
+        addresses: [receiver.address],
+        frozen: false
+      },
+    ], false)).not.to.be.reverted;
+
+    expect(await nft.hasRole(roles.MINT_ROLE, receiver.address)).to.be.true;
+
+    await expect(nft.update(newConfig, [
+      {
+        role: roles.MINT_ROLE,
+        addresses: [],
+        frozen: false
+      },
+    ], false)).not.to.be.reverted;
+
+    expect(await nft.hasRole(roles.MINT_ROLE, receiver.address)).to.be.false;
+  });
+
   it("It should deploy, then update one of roles w/different cases", async () => {
     const nft = await deploy();
     const newConfig = {
@@ -138,7 +169,7 @@ describe("ERC721NFTCustom", function () {
       tokensTransferable: true,
       royaltiesBps: 250,
       royaltiesAddress: admin_role.address
-    }; 
+    };
     // wrong role
     await expect(nft.update(newConfig, [
       {
@@ -187,7 +218,7 @@ describe("ERC721NFTCustom", function () {
 
   it("It should deploy the contract, mint a token, and resolve to the right URI, mint from wrong roles should fail", async () => {
     const nft = await deploy();
-    
+
     await nft.mintToCaller(caller.address, 1, URI);
     await nft.connect(admin_role).mintToCaller(caller.address, 2, URI);
     await nft.connect(mint_role).mintToCaller(caller.address, 3, URI);
@@ -207,7 +238,7 @@ describe("ERC721NFTCustom", function () {
     await nft.revokeNFTPortPermissions();
     await expect(nft.mintToCaller(caller.address, 1, URI)).to.be.reverted;
   });
-  
+
   it("It should deploy the contract, revoke NFTPort permission via update, then mint a token from NFTPort should fail", async () => {
     const nft = await deploy();
     await nft.mintToCaller(caller.address, 1, URI);
@@ -223,14 +254,14 @@ describe("ERC721NFTCustom", function () {
 
   it("It should deploy the contract, check transferOwnership", async () => {
     const nft = await deploy();
-    expect(await nft.owner()).to.equal(admin_role.address); 
+    expect(await nft.owner()).to.equal(admin_role.address);
     await expect(nft.transferOwnership(thirdparty.address)).to.be.reverted;
     await nft.connect(admin_role).transferOwnership(thirdparty.address);
-    expect(await nft.owner()).to.equal(thirdparty.address); 
+    expect(await nft.owner()).to.equal(thirdparty.address);
     await nft.connect(thirdparty).mintToCaller(caller.address, 2, URI);
     await expect(nft.connect(admin_role).mintToCaller(caller.address, 2, URI)).to.be.reverted;
   });
-  
+
   it("It should deploy the contract, with correct name and symbol, all options are false", async () => {
     const nft = await deploy(false, false, false);
     expect(await nft.name()).to.equal("NFTPort");
@@ -253,7 +284,7 @@ describe("ERC721NFTCustom", function () {
   it("It should deploy the contract, tokens uri's are initially frozen, mint token, update baseURI should fail", async () => {
     const nft = await deploy(false);
     await nft.mintToCaller(caller.address, 1, URI);
-    expect(await nft.tokenURI(1)).to.equal(baseURI + URI);    
+    expect(await nft.tokenURI(1)).to.equal(baseURI + URI);
     await expect(nft.update({
         baseURI: baseURIUpdated,
         metadataUpdatable: false,
