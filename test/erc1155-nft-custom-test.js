@@ -131,6 +131,37 @@ describe("ERC1155NFTCustom", function () {
     ]);
   });
 
+  it("It should deploy, then let you assign and unassign roles", async () => {
+    const nft = await deploy();
+    const newConfig = {
+      baseURI: "baseUri",
+      metadataUpdatable: true,
+      tokensTransferable: true,
+      royaltiesBps: 250,
+      royaltiesAddress: admin_role.address
+    };
+
+    await expect(nft.update(newConfig, [
+      {
+        role: roles.MINT_ROLE,
+        addresses: [receiver.address],
+        frozen: false
+      },
+    ], false)).not.to.be.reverted;
+
+    expect(await nft.hasRole(roles.MINT_ROLE, receiver.address)).to.be.true;
+
+    await expect(nft.update(newConfig, [
+      {
+        role: roles.MINT_ROLE,
+        addresses: [],
+        frozen: false
+      },
+    ], false)).not.to.be.reverted;
+
+    expect(await nft.hasRole(roles.MINT_ROLE, receiver.address)).to.be.false;
+  });
+  
   it("It should deploy, then update one of roles w/different cases", async () => {
     const nft = await deploy();
     const newConfig = {

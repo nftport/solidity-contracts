@@ -89,6 +89,7 @@ abstract contract GranularRoles is AccessControl {
                 delete _rolesAddressesIndexed[role];
                 for(uint256 addressIndex = 0; addressIndex < rolesAddresses[roleIndex].addresses.length; addressIndex++) {
                     _grantRole(role, rolesAddresses[roleIndex].addresses[addressIndex]);
+                    _rolesAddressesIndexed[role].push(rolesAddresses[roleIndex].addresses[addressIndex]);
                 }
                 if (rolesAddresses[roleIndex].frozen) {
                     _rolesFrozen[role] = true;
