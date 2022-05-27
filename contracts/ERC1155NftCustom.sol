@@ -123,7 +123,13 @@ contract ERC1155NFTCustom is ERC1155, GranularRoles {
         bool isRevokeNFTPortPermissions
     ) public
     onlyRole(UPDATE_CONTRACT_ROLE) {
-        require(metadataUpdatable, "NFT: Contract updates are frozen");
+        // If metadata is frozen, baseURI cannot be updated
+        require(
+            metadataUpdatable ||
+            (keccak256(abi.encodePacked(newConfig.baseURI)) ==
+                keccak256(abi.encodePacked(baseURI))),
+            "Metadata is frozen"
+        );
 
         baseURI = newConfig.baseURI;
         royaltiesAddress = newConfig.royaltiesAddress;
