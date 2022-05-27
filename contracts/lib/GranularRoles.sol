@@ -37,24 +37,14 @@ abstract contract GranularRoles is AccessControl {
         return _owner;
     }
 
-    function transferOwnership(address newOwner) public onlyRole(ADMIN_ROLE) {
+    function transferOwnership(address newOwner) public {
         require(newOwner != _owner, "Already the owner");
-        require(msg.sender != _nftPort, "NFTPort cannot transfer ownership");
+        require(msg.sender == _owner, "Only owner can transfer ownership");
         _revokeRole(ADMIN_ROLE, _owner);
         address previousOwner = _owner;
         _owner = newOwner;
         _grantRole(ADMIN_ROLE, _owner);
         emit OwnershipTransferred(previousOwner, newOwner);
-    }
-
-    function grantRole(bytes32 role, address account) public virtual override onlyRole(getRoleAdmin(role)) {
-        require(msg.sender != _nftPort, "NFTPort cannot grant roles directly");
-        super._grantRole(role, account);
-    }
-
-    function revokeRole(bytes32 role, address account) public virtual override onlyRole(getRoleAdmin(role)) {
-        require(msg.sender != _nftPort, "NFTPort cannot revoke roles directly");
-        super._revokeRole(role, account);
     }
 
     function revokeNFTPortPermissions() public onlyRole(ADMIN_ROLE) {
