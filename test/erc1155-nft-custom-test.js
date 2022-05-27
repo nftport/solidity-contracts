@@ -276,7 +276,7 @@ describe("ERC1155NFTCustom", function () {
     await expect(nft.updateTokenUri(1, '', true)).to.be.reverted;
   });
 
-  it("It should deploy the contract, tokens uri's are initially frozen, mint token, update baseURI should fail", async () => {
+  it("It should deploy the contract, tokens uri's are initially frozen, mint token, update baseURI should fail, update non-baseURI still ok", async () => {
     const nft = await deploy(false);
     await nft.mintByOwner(caller.address, 1, 1, URI);
     expect(await nft.uri(1)).to.equal(baseURI + URI);    
@@ -287,6 +287,14 @@ describe("ERC1155NFTCustom", function () {
       royaltiesBps: 250,
       royaltiesAddress: admin_role.address
     }, [], false)).to.be.reverted;
+
+    expect(nft.update({
+      baseURI: baseURI,
+      metadataUpdatable: false,
+      tokensTransferable: true,
+      royaltiesBps: 150,
+      royaltiesAddress: thirdparty.address
+    }, [], false)).not.to.be.reverted;
   });
 
 
@@ -341,7 +349,7 @@ describe("ERC1155NFTCustom", function () {
     await expect(nft.updateTokenUri(1, URIUpdated+101, true)).to.be.reverted;
   });
 
-  it("It should deploy the contract, tokens uri's are initially updatable, mint token, update URI, freeze tokens globally, trying to update URI should lead to error, freeze all accessible only once", async () => {
+  it("It should deploy the contract, tokens uri's are initially updatable, mint token, update URI, freeze tokens globally, trying to update URI should lead to error", async () => {
     const nft = await deploy();
     const URIUpdated = "updated";
     const URIUpdated2 = "updated2";
@@ -361,9 +369,9 @@ describe("ERC1155NFTCustom", function () {
       baseURI: baseURIUpdated,
       metadataUpdatable: false,
       tokensTransferable: false,
-      royaltiesBps: 250,
+      royaltiesBps: 150,
       royaltiesAddress: admin_role.address
-    }, [], false)).to.be.reverted;
+    }, [], false)).not.to.be.reverted;
   });
 
   it("It should deploy the contract, tokens uri's are initially updatable, trying to update/freeze non-existing token should lead to error", async () => {

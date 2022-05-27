@@ -181,7 +181,7 @@ contract ERC721NFTCustom is ERC721URIStorage, GranularRoles {
         if (!newConfig.tokensTransferable) {
             tokensTransferable = false;
         }
-        if (!newConfig.metadataUpdatable) {
+        if (!newConfig.metadataUpdatable && metadataUpdatable) {
             metadataUpdatable = false;
             emit PermanentURIGlobal();
         }
