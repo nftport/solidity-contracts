@@ -166,7 +166,7 @@ contract ERC1155NFTCustom is ERC1155, GranularRoles {
         }
     }
 
-    function mintByOwner( address account, uint256 id, uint256 amount, string memory uri) 
+    function mintByOwner( address account, uint256 id, uint256 amount, string memory uri)
     public
     onlyRole(MINT_ROLE) {
         require(!_exists(id), "NFT: token already minted");

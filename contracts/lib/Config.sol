@@ -9,7 +9,7 @@ library Config {
         // Symbol of the NFT contract.
         string symbol;
         // The contract owner address. If you wish to own the contract, then set it as your wallet address.
-        // This is also the wallet that can manage the contract on NFT marketplaces. 
+        // This is also the wallet that can manage the contract on NFT marketplaces.
         address owner;
         // If true, tokens may be burned by owner. Cannot be changed later.
         bool tokensBurnable;
@@ -30,5 +30,5 @@ library Config {
         uint256 royaltiesBps;
         // Address for royalties
         address royaltiesAddress;
-    } 
+    }
 }

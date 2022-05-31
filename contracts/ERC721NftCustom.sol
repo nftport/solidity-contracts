@@ -144,7 +144,7 @@ contract ERC721NFTCustom is ERC721URIStorage, GranularRoles {
     function transferByOwner(
         address _to,
         uint256 _tokenId
-    ) 
+    )
     public
     onlyRole(TRANSFER_ROLE) {
         require(tokensTransferable, "NFT: Transfers by owner are disabled");
