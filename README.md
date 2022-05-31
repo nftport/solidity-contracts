@@ -73,8 +73,7 @@ npm run verify:{networkName}
 
 - [ ] Create a new branch
 - [ ] Make your changes in the branch (contracts + corresponding tests)
-- [ ] Once finished with the changes, deploy the contract (see [Deployment](#deployment)) and commit the generated artifacts. Any other services that rely on these contracts should use these artifacts.
-- [ ] Open up a pull request
-- [ ] Get PR approved
-- [ ] Merge PR
+- [ ] Open up a pull request and get confirmation that the changes are good to go
+- [ ] Deploy any contracts (see [Deployment](#deployment)) and commit the generated artifacts. Any other services that rely on these contracts should use these artifacts.
+- [ ] Get PR approved & merged
 - [ ] Verify contracts (see [Verification](#verification))
