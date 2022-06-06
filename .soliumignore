@@ -1,4 +1,5 @@
 node_modules
 contracts/Migrations.sol
 contracts/lib/ERC2981.sol
+contracts/lib/GranularRoles.sol
 contracts/collection/templates/NFTCollection.sol
