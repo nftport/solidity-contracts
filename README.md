@@ -66,40 +66,6 @@ npm run verify:{networkName}
 `networkName` is one of:
 
 - `polygon`
-<<<<<<< verifying-deployed-contracts-readme
-- `mumbai` (Polygon testnet) 
-- `rinkeby` (Ethereum testnet)
-
-
-### To verify already deployed contracts:
-#### Setup
-```
-git clone https://github.com/poanetwork/solidity-flattener.git
-cd solidity-flattener
-npm install
-```
-#### Copy contracts to solidity-flattener directory
-```
-cp -r contracts solidity-flattener/contracts
-cp node_modules/@openzeppelin solidity-flattener/contracts/@openzeppelin
-```
-#### Flatten solidity contract
-```
-cd solidity-flattener
-npm start contract/contract.sol
-```
-2) Open Contract on Polygonscan/rinkeby.etherscan.io , click Contract -> Verify and Publish
-3) Compiler type: Solidity (single file)
-4) Compiler version: 0.8.9
-5) License MIT
-6) Optimization -> Yes
-7) Paste flattened solidity code
-8) Get ABI encoded constructor params
-    - https://abi.hashex.org/, Put contract ABI there
-    - Add constructor params
-      (for empty values add some value and remove it so its empty)
-9) Verify and publish
-=======
 - `mumbai` (Polygon testnet)
 - `rinkeby` (Ethereum testnet)
 
@@ -111,4 +77,39 @@ npm start contract/contract.sol
 - [ ] Deploy any contracts (see [Deployment](#deployment)) and commit the generated artifacts. Any other services that rely on these contracts should use these artifacts.
 - [ ] Get PR approved & merged
 - [ ] Verify contracts (see [Verification](#verification))
->>>>>>> master
+
+### To verify legacy deployments
+
+#### Setup
+
+```
+git clone https://github.com/poanetwork/solidity-flattener.git
+cd solidity-flattener
+npm install
+```
+
+#### Copy contracts to solidity-flattener directory
+
+```
+cp -r contracts solidity-flattener/contracts
+cp node_modules/@openzeppelin solidity-flattener/contracts/@openzeppelin
+```
+
+#### Flatten solidity contract
+
+```
+cd solidity-flattener
+npm start contract/contract.sol
+```
+
+2. Open Contract on Polygonscan/rinkeby.etherscan.io , click Contract -> Verify and Publish
+3. Compiler type: Solidity (single file)
+4. Compiler version: 0.8.9
+5. License MIT
+6. Optimization -> Yes
+7. Paste flattened solidity code
+8. Get ABI encoded constructor params
+   - https://abi.hashex.org/, Put contract ABI there
+   - Add constructor params
+     (for empty values add some value and remove it so its empty)
+9. Verify and publish
