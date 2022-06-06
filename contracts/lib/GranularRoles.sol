@@ -81,8 +81,23 @@ abstract contract GranularRoles is AccessControl {
             require(hasRole(ADMIN_ROLE, msg.sender), "Granular roles: only ADMIN_ROLE can change permissions");
             for (uint256 roleIndex = 0; roleIndex < rolesAddresses.length; roleIndex++) {
                 bytes32 role = rolesAddresses[roleIndex].role;
-                require(_regularRoleValid(role), "GranularRoles: Invalid rolesAddresses");
-                require(!_rolesFrozen[role], "GranularRoles: One of roles is frozen");
+                require(_regularRoleValid(role), 
+                    string(
+                        abi.encodePacked(
+                            "GranularRoles: invalid role ",
+                            Strings.toHexString(uint256(role), 32)
+                        )
+                    )
+                );
+                require(!_rolesFrozen[role], 
+                    string(
+                        abi.encodePacked(
+                            "GranularRoles: role ",
+                            Strings.toHexString(uint256(role), 32),
+                            " is frozen"
+                        )
+                    )
+                );
                 for(uint256 addressIndex = 0; addressIndex < _rolesAddressesIndexed[role].length; addressIndex++) {
                     _revokeRole(role, _rolesAddressesIndexed[role][addressIndex]);
                 }
