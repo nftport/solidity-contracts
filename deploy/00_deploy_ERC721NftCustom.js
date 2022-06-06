@@ -6,20 +6,20 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     from: deployer,
     log: true,
     args: [
-      [
-        "NFTPort",
-        "NFT",
-        deployer,
-        true,
-      ],
-      [
-        "ipfs://baseURI",
-        true,
-        true,
-        deployer,
-        250,
-      ],
-      []
+      {
+        name: "NFTPort",
+        symbol: "NFT",
+        owner: deployer,
+        tokensBurnable: true,
+      },
+      {
+        baseURI: "ipfs://baseURI",
+        metadataUpdatable: true,
+        tokensTransferable: true,
+        royaltiesBps: 250,
+        royaltiesAddress: deployer,
+      },
+      [],
     ],
   });
 };
