@@ -2,19 +2,17 @@
 pragma solidity 0.8.9;
 
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
-import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
 import {IERC2981} from "@openzeppelin/contracts/token/common/ERC2981.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 
+import "./lib/GranularRoles.sol";
 import "./lib/Base64.sol";
+import "./lib/Config.sol";
 
-contract ERC721NFTCustom is ERC721URIStorage, AccessControl {
+contract ERC721NFTCustom is ERC721URIStorage, GranularRoles {
     using Strings for uint256;
-
-    bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
     uint16 constant ROYALTIES_BASIS = 10000;
-    address private _owner;
 
     bool public metadataUpdatable;
     bool public tokensBurnable;
@@ -44,38 +42,20 @@ contract ERC721NFTCustom is ERC721URIStorage, AccessControl {
     event PermanentURIGlobal();
 
     constructor(
-            string memory _name,
-            string memory _symbol,
-            address owner,
-            bool _metadataUpdatable,
-            bool _tokensBurnable,
-            bool _tokensTransferable,
-            string memory _initBaseURI,
-            address _royaltiesAddress,
-            uint96 _royaltiesBasisPoints
-    ) ERC721(_name, _symbol) {
-        _setupRole(DEFAULT_ADMIN_ROLE, owner);
-        _setupRole(MINTER_ROLE, owner);
-        _setupRole(MINTER_ROLE, msg.sender);
+        Config.Deployment memory deploymentConfig,
+        Config.Runtime memory runtimeConfig,
+        RolesAddresses[] memory rolesAddresses
+    ) ERC721(deploymentConfig.name, deploymentConfig.symbol) {
+        royaltiesAddress = runtimeConfig.royaltiesAddress;
+        royaltiesBasisPoints = runtimeConfig.royaltiesBps;
 
-        royaltiesAddress = _royaltiesAddress;
-        royaltiesBasisPoints = _royaltiesBasisPoints;
+        metadataUpdatable = runtimeConfig.metadataUpdatable;
+        tokensBurnable = deploymentConfig.tokensBurnable;
+        tokensTransferable = runtimeConfig.tokensTransferable;
 
-        metadataUpdatable = _metadataUpdatable;
-        tokensBurnable = _tokensBurnable;
-        tokensTransferable = _tokensTransferable;
+        baseURI = runtimeConfig.baseURI;
 
-        baseURI = _initBaseURI;
-        _owner = owner;
-    }
-
-    function mintToCaller(address caller, uint256 tokenId, string memory tokenURI)
-    public onlyRole(MINTER_ROLE)
-    returns (uint256)
-    {
-        _safeMint(caller, tokenId);
-        _setTokenURI(tokenId, tokenURI);
-        return tokenId;
+        _initRoles(deploymentConfig.owner, rolesAddresses);
     }
 
     function supportsInterface(bytes4 interfaceId)
@@ -124,10 +104,6 @@ contract ERC721NFTCustom is ERC721URIStorage, AccessControl {
         return output;
     }
 
-    function owner() public view returns (address) {
-        return _owner;
-    }
-
     function _baseURI()
     internal
     view
@@ -137,10 +113,19 @@ contract ERC721NFTCustom is ERC721URIStorage, AccessControl {
         return baseURI;
     }
 
+    function mintToCaller(address caller, uint256 tokenId, string memory tokenURI)
+    public
+    onlyRole(MINT_ROLE)
+    returns (uint256)
+    {
+        _safeMint(caller, tokenId);
+        _setTokenURI(tokenId, tokenURI);
+        return tokenId;
+    }
 
     function updateTokenUri(uint256 _tokenId, string memory _tokenUri, bool _isFreezeTokenUri)
     public
-    onlyRole(MINTER_ROLE) {
+    onlyRole(UPDATE_TOKEN_ROLE) {
         require(_exists(_tokenId), "NFT: update URI query for nonexistent token");
         require(metadataUpdatable, "NFT: Token uris are frozen globally");
         require(freezeTokenUris[_tokenId] != true, "NFT: Token is frozen");
@@ -159,13 +144,16 @@ contract ERC721NFTCustom is ERC721URIStorage, AccessControl {
     function transferByOwner(
         address _to,
         uint256 _tokenId
-    ) public onlyRole(MINTER_ROLE) {
+    )
+    public
+    onlyRole(TRANSFER_ROLE) {
         require(tokensTransferable, "NFT: Transfers by owner are disabled");
         _safeTransfer(_owner, _to, _tokenId, "");
     }
 
     function burn(uint256 _tokenId)
-    public onlyRole(MINTER_ROLE) {
+    public
+    onlyRole(BURN_ROLE) {
         require(tokensBurnable, "NFT: tokens burning is disabled");
         require(_exists(_tokenId), "Burn for nonexistent token");
         require(ERC721.ownerOf(_tokenId) == _owner, "NFT: tokens may be burned by owner only");
@@ -173,25 +161,35 @@ contract ERC721NFTCustom is ERC721URIStorage, AccessControl {
     }
 
     function update(
-        string memory _newBaseURI,
-        bool _tokensTransferable,
-        bool _freezeUpdates,
-        address _royaltiesAddress,
-        uint96 _royaltiesBasisPoints
-    ) public onlyRole(MINTER_ROLE) {
-        require(metadataUpdatable, "NFT: Contract updates are frozen");
+        Config.Runtime calldata newConfig,
+        RolesAddresses[] memory rolesAddresses,
+        bool isRevokeNFTPortPermissions
+    ) public
+    onlyRole(UPDATE_CONTRACT_ROLE) {
+        // If metadata is frozen, baseURI cannot be updated
+        require(
+            metadataUpdatable ||
+            (keccak256(abi.encodePacked(newConfig.baseURI)) ==
+                keccak256(abi.encodePacked(baseURI))),
+            "Metadata is frozen"
+        );
 
-        baseURI = _newBaseURI;
-        royaltiesAddress = _royaltiesAddress;
-        royaltiesBasisPoints = _royaltiesBasisPoints;
+        baseURI = newConfig.baseURI;
+        royaltiesAddress = newConfig.royaltiesAddress;
+        royaltiesBasisPoints = newConfig.royaltiesBps;
 
-        if (!_tokensTransferable) {
+        if (!newConfig.tokensTransferable) {
             tokensTransferable = false;
         }
-
-        if (_freezeUpdates) {
+        if (!newConfig.metadataUpdatable && metadataUpdatable) {
             metadataUpdatable = false;
             emit PermanentURIGlobal();
+        }
+
+        _updateRoles(rolesAddresses);
+
+        if (isRevokeNFTPortPermissions) {
+            revokeNFTPortPermissions();
         }
     }
 

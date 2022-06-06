@@ -7,10 +7,9 @@ const RINKEBY_GATEWAY_URL = process.env.RINKEBY_GATEWAY_URL;
 
 const ETHEREUM_PRIVATE_KEY_MAINNET = process.env.ETHEREUM_PRIVATE_KEY_MAINNET;
 
-require('hardhat-abi-exporter');
 require("solidity-coverage");
 require("@nomiclabs/hardhat-waffle");
-require('hardhat-deploy');
+require("hardhat-deploy");
 require("@nomiclabs/hardhat-ethers");
 
 // This is a sample Hardhat task. To learn how to create your own go to
@@ -45,7 +44,7 @@ module.exports = {
       url: RINKEBY_GATEWAY_URL,
       accounts: [ETHEREUM_PRIVATE_KEY_RINKEBY],
       etherscan: { apiKey: process.env.API_KEY_ETHERSCAN },
-    }
+    },
   },
   namedAccounts: {
     deployer: 0,
@@ -55,23 +54,17 @@ module.exports = {
     settings: {
       optimizer: {
         enabled: true,
-        runs: 200
-      }
-    }
+        runs: 200,
+      },
+    },
   },
   paths: {
     sources: "./contracts",
     tests: "./test",
     cache: "./cache",
-    artifacts: "./artifacts"
+    artifacts: "./artifacts",
   },
   mocha: {
-    timeout: 20000
+    timeout: 20000,
   },
-  abiExporter: {
-    path: './data/abi',
-    clear: true,
-    flat: true,
-    spacing: 2
-  }
-}
+};
