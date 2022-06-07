@@ -2,7 +2,7 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
   const { deploy } = deployments;
   const { deployer } = await getNamedAccounts();
 
-  await deploy("ERC1155NFTCustom", {
+  await deploy("CustomERC1155Roles", {
     from: deployer,
     log: true,
     args: [
@@ -24,4 +24,4 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
   });
 };
 
-module.exports.tags = ["ERC1155NFTCustom"];
+module.exports.tags = ["CustomERC1155Roles"];
