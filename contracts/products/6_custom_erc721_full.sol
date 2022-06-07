@@ -2,17 +2,12 @@
 pragma solidity 0.8.9;
 
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
+import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
-import {IERC2981} from "@openzeppelin/contracts/token/common/ERC2981.sol";
-import "@openzeppelin/contracts/utils/Strings.sol";
 
-import "./lib/GranularRoles.sol";
-import "./lib/Base64.sol";
-import "./lib/Config.sol";
-
-contract ERC721NFTCustom is ERC721URIStorage, GranularRoles {
-    using Strings for uint256;
-    uint16 constant ROYALTIES_BASIS = 10000;
+contract ERC721NFTCustom is ERC721URIStorage, AccessControl {
+    bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
+    address private _owner;
 
     bool public metadataUpdatable;
     bool public tokensBurnable;
@@ -35,27 +30,37 @@ contract ERC721NFTCustom is ERC721URIStorage, GranularRoles {
 
     string public baseURI;
 
-    address public royaltiesAddress;
-    uint256 public royaltiesBasisPoints;
-
     event PermanentURI(string _value, uint256 indexed _id); // https://docs.opensea.io/docs/metadata-standards
     event PermanentURIGlobal();
 
     constructor(
-        Config.Deployment memory deploymentConfig,
-        Config.Runtime memory runtimeConfig,
-        RolesAddresses[] memory rolesAddresses
-    ) ERC721(deploymentConfig.name, deploymentConfig.symbol) {
-        royaltiesAddress = runtimeConfig.royaltiesAddress;
-        royaltiesBasisPoints = runtimeConfig.royaltiesBps;
+            string memory _name, 
+            string memory _symbol, 
+            address owner, 
+            bool _metadataUpdatable, 
+            bool _tokensBurnable,
+            bool _tokensTransferable,
+            string memory _initBaseURI
+    ) ERC721(_name, _symbol) {
+        _setupRole(DEFAULT_ADMIN_ROLE, owner);
+        _setupRole(MINTER_ROLE, owner);
+        _setupRole(MINTER_ROLE, msg.sender);
 
-        metadataUpdatable = runtimeConfig.metadataUpdatable;
-        tokensBurnable = deploymentConfig.tokensBurnable;
-        tokensTransferable = runtimeConfig.tokensTransferable;
+        metadataUpdatable = _metadataUpdatable;
+        tokensBurnable = _tokensBurnable;
+        tokensTransferable = _tokensTransferable;
 
-        baseURI = runtimeConfig.baseURI;
+        baseURI = _initBaseURI;
+        _owner = owner;
+    }
 
-        _initRoles(deploymentConfig.owner, rolesAddresses);
+    function mintToCaller(address caller, uint256 tokenId, string memory tokenURI)
+    public onlyRole(MINTER_ROLE)
+    returns (uint256)
+    {
+        _safeMint(caller, tokenId);
+        _setTokenURI(tokenId, tokenURI);
+        return tokenId;
     }
 
     function supportsInterface(bytes4 interfaceId)
@@ -64,68 +69,26 @@ contract ERC721NFTCustom is ERC721URIStorage, GranularRoles {
     override(ERC721, AccessControl)
     returns (bool)
     {
-        return ERC721.supportsInterface(interfaceId) || interfaceId == type(IERC2981).interfaceId;
+        return ERC721.supportsInterface(interfaceId);
     }
 
-    function royaltyInfo(uint256 tokenId, uint256 salePrice)
-    external
-    view
-    returns (address, uint256)
-    {
-        return (royaltiesAddress, royaltiesBasisPoints * salePrice / ROYALTIES_BASIS);
+    function owner() public view returns (address) {
+        return _owner;
     }
 
-    function contractURI()
-    external
-    view
-    returns (string memory)
-    {
-        string memory json = Base64.encode(
-            bytes(
-                string(
-                    abi.encodePacked(
-                        // solium-disable-next-line quotes
-                        '{"seller_fee_basis_points": ', // solhint-disable-line quotes
-                        royaltiesBasisPoints.toString(),
-                        // solium-disable-next-line quotes
-                        ', "fee_recipient": "', // solhint-disable-line quotes
-                        uint256(uint160(royaltiesAddress)).toHexString(20),
-                        // solium-disable-next-line quotes
-                        '"}' // solhint-disable-line quotes
-                    )
-                )
-            )
-        );
-
-        string memory output = string(
-            abi.encodePacked("data:application/json;base64,", json)
-        );
-
-        return output;
-    }
-
-    function _baseURI()
+    function _baseURI() 
     internal
-    view
-    virtual
+    view 
+    virtual 
     override(ERC721)
     returns (string memory) {
         return baseURI;
     }
 
-    function mintToCaller(address caller, uint256 tokenId, string memory tokenURI)
-    public
-    onlyRole(MINT_ROLE)
-    returns (uint256)
-    {
-        _safeMint(caller, tokenId);
-        _setTokenURI(tokenId, tokenURI);
-        return tokenId;
-    }
 
     function updateTokenUri(uint256 _tokenId, string memory _tokenUri, bool _isFreezeTokenUri)
     public
-    onlyRole(UPDATE_TOKEN_ROLE) {
+    onlyRole(MINTER_ROLE) {
         require(_exists(_tokenId), "NFT: update URI query for nonexistent token");
         require(metadataUpdatable, "NFT: Token uris are frozen globally");
         require(freezeTokenUris[_tokenId] != true, "NFT: Token is frozen");
@@ -144,16 +107,13 @@ contract ERC721NFTCustom is ERC721URIStorage, GranularRoles {
     function transferByOwner(
         address _to,
         uint256 _tokenId
-    )
-    public
-    onlyRole(TRANSFER_ROLE) {
+    ) public onlyRole(MINTER_ROLE) {
         require(tokensTransferable, "NFT: Transfers by owner are disabled");
         _safeTransfer(_owner, _to, _tokenId, "");
     }
 
     function burn(uint256 _tokenId)
-    public
-    onlyRole(BURN_ROLE) {
+    public onlyRole(MINTER_ROLE) {
         require(tokensBurnable, "NFT: tokens burning is disabled");
         require(_exists(_tokenId), "Burn for nonexistent token");
         require(ERC721.ownerOf(_tokenId) == _owner, "NFT: tokens may be burned by owner only");
@@ -161,35 +121,18 @@ contract ERC721NFTCustom is ERC721URIStorage, GranularRoles {
     }
 
     function update(
-        Config.Runtime calldata newConfig,
-        RolesAddresses[] memory rolesAddresses,
-        bool isRevokeNFTPortPermissions
-    ) public
-    onlyRole(UPDATE_CONTRACT_ROLE) {
-        // If metadata is frozen, baseURI cannot be updated
-        require(
-            metadataUpdatable ||
-            (keccak256(abi.encodePacked(newConfig.baseURI)) ==
-                keccak256(abi.encodePacked(baseURI))),
-            "Metadata is frozen"
-        );
-
-        baseURI = newConfig.baseURI;
-        royaltiesAddress = newConfig.royaltiesAddress;
-        royaltiesBasisPoints = newConfig.royaltiesBps;
-
-        if (!newConfig.tokensTransferable) {
+        string memory _newBaseURI, 
+        bool _tokensTransferable,
+        bool _freezeUpdates
+    ) public onlyRole(MINTER_ROLE) {
+        require(metadataUpdatable, "NFT: Contract updates are frozen");
+        baseURI = _newBaseURI;
+        if (!_tokensTransferable) {
             tokensTransferable = false;
         }
-        if (!newConfig.metadataUpdatable && metadataUpdatable) {
+        if (_freezeUpdates) {
             metadataUpdatable = false;
             emit PermanentURIGlobal();
-        }
-
-        _updateRoles(rolesAddresses);
-
-        if (isRevokeNFTPortPermissions) {
-            revokeNFTPortPermissions();
         }
     }
 
