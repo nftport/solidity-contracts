@@ -9,7 +9,7 @@ import "@openzeppelin/contracts/utils/Strings.sol";
 
 import "../lib/Base64.sol";
 
-contract ERC721NFTCustom is ERC721URIStorage, AccessControl {
+contract CustomERC721Royalties is ERC721URIStorage, AccessControl {
     using Strings for uint256;
 
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");

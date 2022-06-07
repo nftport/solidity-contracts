@@ -6,14 +6,14 @@ const baseURIUpdated = "https://someipfs.com/mockhash/";
 
 const deploy = async(isFreezeTokenUris = true, overrideBaseURI = null) => {
   const [owner] = await ethers.getSigners();
-  const NFT = await ethers.getContractFactory("NftInjectableTokenIdRolesUpdatableBaseURI");
+  const NFT = await ethers.getContractFactory("CustomTokenIdAccessRightsUpdatableBaseURI");
 
   const nft = await NFT.deploy("NFTPort", "NFT", owner.address, isFreezeTokenUris, overrideBaseURI !== null ? overrideBaseURI : baseURI);
   await nft.deployed();
   return nft;
 }
 
-describe("NftInjectableTokenIdRolesUpdatableBaseURI", function () {
+describe("5_custom_token_id_access_rights_updatable_base_uri.sol", function () {
   it("It should deploy the contract, mint a token, and resolve to the right URI", async () => {
     const nft = await deploy();
     const URI = "QmWJBNeQAm9Rh4YaW8GFRnSgwa4dN889VKm9poc2DQPBkv";

@@ -34,7 +34,7 @@ const deploy = async(
     transfer_role,
     thirdparty
   ] = await ethers.getSigners();
-  const NFT = await ethers.getContractFactory("ERC1155NFTCustom");
+  const NFT = await ethers.getContractFactory("CustomERC1155Roles");
 
   const deploymentConfig = {
     name: "NFTPort",
@@ -89,7 +89,7 @@ const deploy = async(
   return nft;
 }
 
-describe("ERC1155NFTCustom", function () {
+describe("12_custom_erc1155_roles.sol", function () {
 
   beforeEach(async () => {
     [

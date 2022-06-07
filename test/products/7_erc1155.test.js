@@ -9,7 +9,7 @@ const deploy = async() => {
   return nft;
 }
 
-describe("ERC1155NFT", function () {
+describe("7_erc1155", function () {
   it("It should deploy the contract, mint a token, and resolve to the right URI, check balanceOf", async () => {
     const nft = await deploy();
     const URI = "QmWJBNeQAm9Rh4YaW8GFRnSgwa4dN889VKm9poc2DQPBkv";

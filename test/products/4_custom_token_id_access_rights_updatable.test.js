@@ -4,13 +4,13 @@ const caller = "0x5FDd0881Ef284D6fBB2Ed97b01cb13d707f91e42";
 
 const deploy = async(isFreezeTokenUris = true) => {
   const [owner] = await ethers.getSigners();
-  const NFT = await ethers.getContractFactory("NftInjectableTokenIdRolesUpdatable");
+  const NFT = await ethers.getContractFactory("CustomTokenIdAccessRightsUpdatable");
   const nft = await NFT.deploy("NFTPort", "NFT", owner.address, isFreezeTokenUris);
   await nft.deployed();
   return nft;
 }
 
-describe("NftInjectableTokenIdRolesUpdatable", function () {
+describe("4_custom_token_id_access_rights_updatable.sol", function () {
   it("It should deploy the contract, mint a token, and resolve to the right URI", async () => {
     const nft = await deploy();
     const URI = "ipfs://QmWJBNeQAm9Rh4YaW8GFRnSgwa4dN889VKm9poc2DQPBkv";

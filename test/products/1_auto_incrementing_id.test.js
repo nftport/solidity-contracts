@@ -1,6 +1,6 @@
 const {expect} = require("chai");
 
-describe("ERC721NFT", function () {
+describe("1_auto_incrementing_id", function () {
   it("It should deploy the contract, mint a token, and resolve to the right URI", async () => {
     const NFT = await ethers.getContractFactory("ERC721NFT");
     const nft = await NFT.deploy("NFTPort", "NFT");

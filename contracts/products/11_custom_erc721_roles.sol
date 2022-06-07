@@ -10,7 +10,7 @@ import "../lib/GranularRoles.sol";
 import "../lib/Base64.sol";
 import "../lib/Config.sol";
 
-contract ERC721NFTCustom is ERC721URIStorage, GranularRoles {
+contract CustomERC721Roles is ERC721URIStorage, GranularRoles {
     using Strings for uint256;
     uint16 constant ROYALTIES_BASIS = 10000;
 

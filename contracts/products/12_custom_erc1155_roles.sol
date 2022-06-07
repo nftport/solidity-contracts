@@ -9,7 +9,7 @@ import "../lib/GranularRoles.sol";
 import "../lib/Base64.sol";
 import "../lib/Config.sol";
 
-contract ERC1155NFTCustom is ERC1155, GranularRoles {
+contract CustomERC1155Roles is ERC1155, GranularRoles {
     using Strings for uint256;
 
     uint16 constant ROYALTIES_BASIS = 10000;
