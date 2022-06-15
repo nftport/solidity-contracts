@@ -51,21 +51,6 @@ pipeline {
         }
       }
     }
-    stage('Ethlint') {
-      steps {
-        gitStatusWrapper(
-            gitHubContext: "Ethlint",
-            credentialsId: 'github',
-            description: 'Ethlint',
-            successDescription: 'Ethlint passed',
-            failureDescription: 'Ethlint failed')
-        {
-          sh '''
-          npx solium -d contracts/
-          '''
-        }
-      }
-    }
     stage('Unit Tests') {
       steps {
          catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
