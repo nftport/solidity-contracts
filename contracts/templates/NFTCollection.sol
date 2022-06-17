@@ -1,17 +1,17 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import "erc721a/contracts/ERC721A.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
-import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 
-import "../../lib/ERC2981.sol";
-import "../../lib/Base64.sol";
+import "../lib/ERC2981.sol";
+import "../lib/Base64.sol";
 
-contract NFTCollection is ERC721, ERC2981, AccessControl, Initializable {
+contract NFTCollection is ERC721A, ERC2981, AccessControl, Initializable {
     using Address for address payable;
     using Strings for uint256;
 
@@ -79,28 +79,28 @@ contract NFTCollection is ERC721, ERC2981, AccessControl, Initializable {
      *************/
 
     /// Contract version, semver-style uint X_YY_ZZ
-    uint256 public constant VERSION = 1_02_00;
+    uint256 public constant VERSION = 1_02_02;
 
     /// Admin role
     bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
 
     // Basis for calculating royalties.
     // This has to be 10k for royaltiesBps to be in basis points.
-    uint16 constant ROYALTIES_BASIS = 10000;
+    uint16 public constant ROYALTIES_BASIS = 10000;
 
     /********************
      * Public variables *
      ********************/
 
-    /// The number of currently minted tokens
+    /// The number of tokens remaining in the reserve
     /// @dev Managed by the contract
-    uint256 public totalSupply;
+    uint256 public reserveRemaining;
 
     /***************************
      * Contract initialization *
      ***************************/
 
-    constructor() ERC721("", "") {
+    constructor() ERC721A("", "") {
         _preventInitialization = true;
     }
 
@@ -113,11 +113,12 @@ contract NFTCollection is ERC721, ERC2981, AccessControl, Initializable {
         _validateDeploymentConfig(deploymentConfig);
 
         _grantRole(ADMIN_ROLE, msg.sender);
-        _grantRole(ADMIN_ROLE, deploymentConfig.owner);
-        _grantRole(DEFAULT_ADMIN_ROLE, deploymentConfig.owner);
+        _transferOwnership(deploymentConfig.owner);
 
         _deploymentConfig = deploymentConfig;
         _runtimeConfig = runtimeConfig;
+
+        reserveRemaining = deploymentConfig.reservedSupply;
     }
 
     /****************
@@ -153,20 +154,23 @@ contract NFTCollection is ERC721, ERC2981, AccessControl, Initializable {
 
     /// Check if public minting is active
     function mintingActive() public view returns (bool) {
+        // We need to rely on block.timestamp since it's
+        // asier to configure across different chains
+        // solhint-disable-next-line not-rely-on-time
         return block.timestamp > _runtimeConfig.publicMintStart;
     }
 
     /// Check if presale minting is active
     function presaleActive() public view returns (bool) {
+        // We need to rely on block.timestamp since it's
+        // easier to configure across different chains
+        // solhint-disable-next-line not-rely-on-time
         return block.timestamp > _runtimeConfig.presaleMintStart;
     }
 
     /// Get the number of tokens still available for minting
     function availableSupply() public view returns (uint256) {
-        return
-            _deploymentConfig.maxSupply -
-            totalSupply -
-            _deploymentConfig.reservedSupply;
+        return _deploymentConfig.maxSupply - totalSupply() - reserveRemaining;
     }
 
     /// Check if the wallet is whitelisted for the presale
@@ -199,17 +203,7 @@ contract NFTCollection is ERC721, ERC2981, AccessControl, Initializable {
         onlyRole(DEFAULT_ADMIN_ROLE)
     {
         require(newOwner != _deploymentConfig.owner, "Already the owner");
-
-        _revokeRole(ADMIN_ROLE, _deploymentConfig.owner);
-        _revokeRole(DEFAULT_ADMIN_ROLE, _deploymentConfig.owner);
-
-        address previousOwner = _deploymentConfig.owner;
-        _deploymentConfig.owner = newOwner;
-
-        _grantRole(ADMIN_ROLE, _deploymentConfig.owner);
-        _grantRole(DEFAULT_ADMIN_ROLE, _deploymentConfig.owner);
-
-        emit OwnershipTransferred(previousOwner, newOwner);
+        _transferOwnership(newOwner);
     }
 
     /// Transfer contract ownership
@@ -230,12 +224,9 @@ contract NFTCollection is ERC721, ERC2981, AccessControl, Initializable {
         external
         onlyRole(ADMIN_ROLE)
     {
-        require(
-            amount <= _deploymentConfig.reservedSupply,
-            "Not enough reserved"
-        );
+        require(amount <= reserveRemaining, "Not enough reserved");
 
-        _deploymentConfig.reservedSupply -= amount;
+        reserveRemaining -= amount;
         _mintTokens(to, amount);
     }
 
@@ -282,13 +273,7 @@ contract NFTCollection is ERC721, ERC2981, AccessControl, Initializable {
         require(amount <= _deploymentConfig.tokensPerMint, "Amount too large");
         require(amount <= availableSupply(), "Not enough tokens left");
 
-        // Update totalSupply only once with the total minted amount
-        totalSupply += amount;
-        // Mint the required amount of tokens,
-        // starting with the highest token ID
-        for (uint256 i = 1; i <= amount; i++) {
-            _safeMint(to, totalSupply - i);
-        }
+        _safeMint(to, amount);
     }
 
     /// Validate deployment config
@@ -300,12 +285,12 @@ contract NFTCollection is ERC721, ERC2981, AccessControl, Initializable {
         require(config.tokensPerMint > 0, "Tokens per mint must be non-zero");
         require(
             config.treasuryAddress != address(0),
-            "Treasury address cannot be the null address"
+            "Treasury address cannot be null"
         );
         require(config.owner != address(0), "Contract must have an owner");
         require(
             config.reservedSupply <= config.maxSupply,
-            "Reserve must be less than maximum supply"
+            "Reserve greater than supply"
         );
     }
 
@@ -334,15 +319,28 @@ contract NFTCollection is ERC721, ERC2981, AccessControl, Initializable {
         );
     }
 
+    /// Internal function without any checks for performing the ownership transfer
+    function _transferOwnership(address newOwner) internal {
+        address previousOwner = _deploymentConfig.owner;
+        _revokeRole(ADMIN_ROLE, previousOwner);
+        _revokeRole(DEFAULT_ADMIN_ROLE, previousOwner);
+
+        _deploymentConfig.owner = newOwner;
+        _grantRole(ADMIN_ROLE, newOwner);
+        _grantRole(DEFAULT_ADMIN_ROLE, newOwner);
+
+        emit OwnershipTransferred(previousOwner, newOwner);
+    }
+
     /// @dev See {IERC165-supportsInterface}.
     function supportsInterface(bytes4 interfaceId)
         public
         view
-        override(ERC721, AccessControl, ERC2981)
+        override(ERC721A, AccessControl, ERC2981)
         returns (bool)
     {
         return
-            ERC721.supportsInterface(interfaceId) ||
+            ERC721A.supportsInterface(interfaceId) ||
             AccessControl.supportsInterface(interfaceId) ||
             ERC2981.supportsInterface(interfaceId);
     }
@@ -392,14 +390,11 @@ contract NFTCollection is ERC721, ERC2981, AccessControl, Initializable {
             bytes(
                 string(
                     abi.encodePacked(
-                        // solium-disable-next-line quotes
                         '{"seller_fee_basis_points": ', // solhint-disable-line quotes
                         _runtimeConfig.royaltiesBps.toString(),
-                        // solium-disable-next-line quotes
                         ', "fee_recipient": "', // solhint-disable-line quotes
                         uint256(uint160(_runtimeConfig.royaltiesAddress))
                             .toHexString(20),
-                        // solium-disable-next-line quotes
                         '"}' // solhint-disable-line quotes
                     )
                 )
