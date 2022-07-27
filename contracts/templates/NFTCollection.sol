@@ -29,9 +29,7 @@ contract NFTCollection is ERC721A, ERC2981, AccessControl, Initializable {
         uint256 maxSupply;
         // The number of free token mints reserved for the contract owner
         uint256 reservedSupply;
-        // Minting price per token.
-        uint256 mintPrice;
-        // The maximum number of tokens the user can mint per transaction.
+        /// The maximum number of tokens the user can mint per transaction.
         uint256 tokensPerMint;
         // Treasury address is the address where minting fees can be withdrawn to.
         // Use `withdrawFees()` to transfer the entire contract balance to the treasury address.
@@ -47,6 +45,14 @@ contract NFTCollection is ERC721A, ERC2981, AccessControl, Initializable {
         // are not frozen on the contract level). This is useful for revealing NFTs after the drop. If false, all the
         // NFTs minted in this contract are frozen by default which means token URIs are non-updatable.
         bool metadataUpdatable;
+        // Minting price per token for public minting
+        uint256 publicMintPrice;
+        // Flag for freezing the public mint price
+        bool publicMintPriceFrozen;
+        // Minting price per token for presale minting
+        uint256 presaleMintPrice;
+        // Flag for freezing the presale mint price
+        bool presaleMintPriceFrozen;
         // Starting timestamp for public minting.
         uint256 publicMintStart;
         // Starting timestamp for whitelisted/presale minting.
@@ -79,7 +85,7 @@ contract NFTCollection is ERC721A, ERC2981, AccessControl, Initializable {
      *************/
 
     /// Contract version, semver-style uint X_YY_ZZ
-    uint256 public constant VERSION = 1_02_02;
+    uint256 public constant VERSION = 1_03_00;
 
     /// Admin role
     bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
@@ -126,7 +132,11 @@ contract NFTCollection is ERC721A, ERC2981, AccessControl, Initializable {
      ****************/
 
     /// Mint tokens
-    function mint(uint256 amount) external payable paymentProvided(amount) {
+    function mint(uint256 amount)
+        external
+        payable
+        paymentProvided(amount * _runtimeConfig.publicMintPrice)
+    {
         require(mintingActive(), "Minting has not started yet");
 
         _mintTokens(msg.sender, amount);
@@ -136,7 +146,7 @@ contract NFTCollection is ERC721A, ERC2981, AccessControl, Initializable {
     function presaleMint(uint256 amount, bytes32[] calldata proof)
         external
         payable
-        paymentProvided(amount)
+        paymentProvided(amount * _runtimeConfig.presaleMintPrice)
     {
         require(presaleActive(), "Presale has not started yet");
         require(
@@ -302,14 +312,60 @@ contract NFTCollection is ERC721A, ERC2981, AccessControl, Initializable {
         // Can't set royalties to more than 100%
         require(config.royaltiesBps <= ROYALTIES_BASIS, "Royalties too high");
 
+        // Validate mint price changes
+        _validatePublicMintPrice(config);
+        _validatePresaleMintPrice(config);
+
+        // Validate metadata changes
+        _validateMetadata(config);
+    }
+
+    function _validatePublicMintPrice(RuntimeConfig calldata config)
+        internal
+        view
+    {
+        // As long as public mint price is not frozen, all changes are valid
+        if (!_runtimeConfig.publicMintPriceFrozen) return;
+
+        // Can't change public mint price once frozen
+        require(
+            _runtimeConfig.publicMintPrice == config.publicMintPrice,
+            "publicMintPrice is frozen"
+        );
+
+        // Can't unfreeze public mint price
+        require(
+            config.publicMintPriceFrozen,
+            "publicMintPriceFrozen is frozen"
+        );
+    }
+
+    function _validatePresaleMintPrice(RuntimeConfig calldata config)
+        internal
+        view
+    {
+        // As long as presale mint price is not frozen, all changes are valid
+        if (!_runtimeConfig.presaleMintPriceFrozen) return;
+
+        // Can't change presale mint price once frozen
+        require(
+            _runtimeConfig.presaleMintPrice == config.presaleMintPrice,
+            "presaleMintPrice is frozen"
+        );
+
+        // Can't unfreeze presale mint price
+        require(
+            config.presaleMintPriceFrozen,
+            "presaleMintPriceFrozen is frozen"
+        );
+    }
+
+    function _validateMetadata(RuntimeConfig calldata config) internal view {
         // If metadata is updatable, we don't have any other limitations
         if (_runtimeConfig.metadataUpdatable) return;
 
-        // If it isn't, has we can't allow the flag to change anymore
-        require(
-            _runtimeConfig.metadataUpdatable == config.metadataUpdatable,
-            "Cannot unfreeze metadata"
-        );
+        // If it isn't, we can't allow the flag to change anymore
+        require(!config.metadataUpdatable, "Cannot unfreeze metadata");
 
         // We also can't allow base URI to change
         require(
@@ -408,12 +464,9 @@ contract NFTCollection is ERC721A, ERC2981, AccessControl, Initializable {
         return output;
     }
 
-    /// Check if enough payment was provided to mint `amount` number of tokens
-    modifier paymentProvided(uint256 amount) {
-        require(
-            msg.value >= amount * _deploymentConfig.mintPrice,
-            "Payment too small"
-        );
+    /// Check if enough payment was provided
+    modifier paymentProvided(uint256 payment) {
+        require(msg.value >= payment, "Payment too small");
         _;
     }
 
@@ -429,8 +482,12 @@ contract NFTCollection is ERC721A, ERC2981, AccessControl, Initializable {
         return _deploymentConfig.reservedSupply;
     }
 
-    function mintPrice() public view returns (uint256) {
-        return _deploymentConfig.mintPrice;
+    function publicMintPrice() public view returns (uint256) {
+        return _runtimeConfig.publicMintPrice;
+    }
+
+    function presaleMintPrice() public view returns (uint256) {
+        return _runtimeConfig.presaleMintPrice;
     }
 
     function tokensPerMint() public view returns (uint256) {
