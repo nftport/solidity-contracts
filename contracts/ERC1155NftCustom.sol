@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.9;
+pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC1155/ERC1155Upgradeable.sol";
 import {IERC2981} from "@openzeppelin/contracts/token/common/ERC2981.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 
@@ -9,7 +9,7 @@ import "./lib/GranularRoles.sol";
 import "./lib/Base64.sol";
 import "./lib/Config.sol";
 
-contract ERC1155NFTCustom is ERC1155, GranularRoles {
+contract ERC1155NFTCustom is ERC1155Upgradeable, GranularRoles {
     using Strings for uint256;
 
     uint16 constant ROYALTIES_BASIS = 10000;
@@ -25,8 +25,8 @@ contract ERC1155NFTCustom is ERC1155, GranularRoles {
     address public royaltiesAddress;
     uint256 public royaltiesBasisPoints;
 
-    mapping (uint256 => bool) public freezeTokenUris;
-    mapping (uint256 => uint256) public tokenSupply;
+    mapping(uint256 => bool) public freezeTokenUris;
+    mapping(uint256 => uint256) public tokenSupply;
     mapping(uint256 => string) private _tokenURIs;
 
     event PermanentURI(string _value, uint256 indexed _id); // https://docs.opensea.io/docs/metadata-standards
@@ -38,7 +38,9 @@ contract ERC1155NFTCustom is ERC1155, GranularRoles {
         Config.Deployment memory deploymentConfig,
         Config.Runtime memory runtimeConfig,
         RolesAddresses[] memory rolesAddresses
-    ) ERC1155(DEFAULT_URI) {
+    ) initializer {
+        __ERC1155_init(DEFAULT_URI);
+
         royaltiesAddress = runtimeConfig.royaltiesAddress;
         royaltiesBasisPoints = runtimeConfig.royaltiesBps;
 
@@ -53,20 +55,35 @@ contract ERC1155NFTCustom is ERC1155, GranularRoles {
         _initRoles(deploymentConfig.owner, rolesAddresses);
     }
 
-    function setURI(string memory _newURI) public onlyRole(UPDATE_CONTRACT_ROLE) {
+    function setURI(string memory _newURI)
+        public
+        onlyRole(UPDATE_CONTRACT_ROLE)
+    {
         _setURI(_newURI);
     }
 
-    function updateTokenUri(uint256 _tokenId, string memory _newUri, bool _isFreezeTokenUri)
-    public
-    onlyRole(UPDATE_TOKEN_ROLE) {
-        require(_exists(_tokenId), "NFT: update URI query for nonexistent token");
+    function updateTokenUri(
+        uint256 _tokenId,
+        string memory _newUri,
+        bool _isFreezeTokenUri
+    ) public onlyRole(UPDATE_TOKEN_ROLE) {
+        require(
+            _exists(_tokenId),
+            "NFT: update URI query for nonexistent token"
+        );
         require(metadataUpdatable, "NFT: Token uris are frozen globally");
         require(freezeTokenUris[_tokenId] != true, "NFT: Token is frozen");
-        require(_isFreezeTokenUri || (bytes(_newUri).length != 0), "NFT: Either _newUri or _isFreezeTokenUri=true required");
+        require(
+            _isFreezeTokenUri || (bytes(_newUri).length != 0),
+            "NFT: Either _newUri or _isFreezeTokenUri=true required"
+        );
 
         if (bytes(_newUri).length != 0) {
-            require(keccak256(bytes(_tokenURIs[_tokenId])) != keccak256(bytes(string(abi.encodePacked(_newUri)))), "NFT: New token URI is same as updated");
+            require(
+                keccak256(bytes(_tokenURIs[_tokenId])) !=
+                    keccak256(bytes(string(abi.encodePacked(_newUri)))),
+                "NFT: New token URI is same as updated"
+            );
             _tokenURIs[_tokenId] = _newUri;
             emit URI(_newUri, _tokenId);
         }
@@ -76,20 +93,17 @@ contract ERC1155NFTCustom is ERC1155, GranularRoles {
         }
     }
 
-    function burn(
-        uint256 id,
-        uint256 value
-    ) public onlyRole(BURN_ROLE) {
+    function burn(uint256 id, uint256 value) public onlyRole(BURN_ROLE) {
         require(tokensBurnable, "NFT: tokens burning is disabled");
 
         _burn(_owner, id, value);
         tokenSupply[id] -= value;
     }
 
-    function burnBatch(
-        uint256[] memory ids,
-        uint256[] memory values
-    ) public onlyRole(BURN_ROLE) {
+    function burnBatch(uint256[] memory ids, uint256[] memory values)
+        public
+        onlyRole(BURN_ROLE)
+    {
         require(tokensBurnable, "NFT: tokens burning is disabled");
         _burnBatch(_owner, ids, values);
         for (uint256 i = 0; i < ids.length; i++) {
@@ -121,13 +135,12 @@ contract ERC1155NFTCustom is ERC1155, GranularRoles {
         Config.Runtime calldata newConfig,
         RolesAddresses[] memory rolesAddresses,
         bool isRevokeNFTPortPermissions
-    ) public
-    onlyRole(UPDATE_CONTRACT_ROLE) {
+    ) public onlyRole(UPDATE_CONTRACT_ROLE) {
         // If metadata is frozen, baseURI cannot be updated
         require(
             metadataUpdatable ||
-            (keccak256(abi.encodePacked(newConfig.baseURI)) ==
-                keccak256(abi.encodePacked(baseURI))),
+                (keccak256(abi.encodePacked(newConfig.baseURI)) ==
+                    keccak256(abi.encodePacked(baseURI))),
             "Metadata is frozen"
         );
 
@@ -150,11 +163,11 @@ contract ERC1155NFTCustom is ERC1155, GranularRoles {
         }
     }
 
-    function totalSupply (uint256 _id) public view returns (uint256) {
+    function totalSupply(uint256 _id) public view returns (uint256) {
         return tokenSupply[_id];
     }
 
-    function uri(uint256 _id) public override view returns (string memory) {
+    function uri(uint256 _id) public view override returns (string memory) {
         if (bytes(_tokenURIs[_id]).length > 0) {
             if (bytes(baseURI).length > 0) {
                 return string(abi.encodePacked(baseURI, _tokenURIs[_id]));
@@ -166,9 +179,12 @@ contract ERC1155NFTCustom is ERC1155, GranularRoles {
         }
     }
 
-    function mintByOwner( address account, uint256 id, uint256 amount, string memory uri)
-    public
-    onlyRole(MINT_ROLE) {
+    function mintByOwner(
+        address account,
+        uint256 id,
+        uint256 amount,
+        string memory uri
+    ) public onlyRole(MINT_ROLE) {
         require(!_exists(id), "NFT: token already minted");
         if (bytes(uri).length > 0) {
             _tokenURIs[id] = uri;
@@ -186,8 +202,11 @@ contract ERC1155NFTCustom is ERC1155, GranularRoles {
     ) public onlyRole(MINT_ROLE) {
         for (uint256 i = 0; i < ids.length; i++) {
             require(!_exists(ids[i]), "NFT: one of tokens are already minted");
-            require(to[i] == address(to[i]), "NFT: one of addresses is invalid");
-            require(amounts[i]>0, "NFT: all amounts must be > 0");
+            require(
+                to[i] == address(to[i]),
+                "NFT: one of addresses is invalid"
+            );
+            require(amounts[i] > 0, "NFT: all amounts must be > 0");
             tokenSupply[ids[i]] += amounts[i];
             if (bytes(uris[i]).length > 0) {
                 _tokenURIs[ids[i]] = uris[i];
@@ -197,11 +216,15 @@ contract ERC1155NFTCustom is ERC1155, GranularRoles {
         }
     }
 
-    function royaltyInfo(
-        uint256 tokenId,
-        uint256 salePrice
-    ) external view returns (address, uint256) {
-        return (royaltiesAddress, royaltiesBasisPoints * salePrice / ROYALTIES_BASIS);
+    function royaltyInfo(uint256 tokenId, uint256 salePrice)
+        external
+        view
+        returns (address, uint256)
+    {
+        return (
+            royaltiesAddress,
+            (royaltiesBasisPoints * salePrice) / ROYALTIES_BASIS
+        );
     }
 
     function contractURI() external view returns (string memory) {
@@ -229,9 +252,15 @@ contract ERC1155NFTCustom is ERC1155, GranularRoles {
         return output;
     }
 
-    function supportsInterface(bytes4 interfaceId) public view override(ERC1155, AccessControl) returns (bool)
+    function supportsInterface(bytes4 interfaceId)
+        public
+        view
+        override(ERC1155Upgradeable, AccessControlUpgradeable)
+        returns (bool)
     {
-        return ERC1155.supportsInterface(interfaceId) || interfaceId == type(IERC2981).interfaceId;
+        return
+            ERC1155Upgradeable.supportsInterface(interfaceId) ||
+            interfaceId == type(IERC2981).interfaceId;
     }
 
     function _exists(uint256 _tokenId) internal view virtual returns (bool) {
