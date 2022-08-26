@@ -7,13 +7,13 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     log: true,
     args: [
       {
-        name: "ERC721NFTProduct",
+        name: "NFTPort",
         symbol: "NFT",
         owner: deployer,
         tokensBurnable: true,
       },
       {
-        baseURI: "",
+        baseURI: "ipfs://baseURI",
         metadataUpdatable: true,
         tokensTransferable: true,
         royaltiesBps: 250,
