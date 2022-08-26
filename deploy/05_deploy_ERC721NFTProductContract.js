@@ -2,18 +2,18 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
   const { deploy } = deployments;
   const { deployer } = await getNamedAccounts();
 
-  await deploy("ERC721NFTCustom", {
+  await deploy("ERC721NFTProductContract", {
     from: deployer,
     log: true,
     args: [
       {
-        name: "NFTPort",
+        name: "ERC721NFTProduct",
         symbol: "NFT",
         owner: deployer,
         tokensBurnable: true,
       },
       {
-        baseURI: "ipfs://baseURI",
+        baseURI: "",
         metadataUpdatable: true,
         tokensTransferable: true,
         royaltiesBps: 250,
@@ -24,4 +24,4 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
   });
 };
 
-module.exports.tags = ["ERC721NFTCustom"];
+module.exports.tags = ["NFTCollectionContract"];
