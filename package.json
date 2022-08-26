@@ -41,12 +41,13 @@
     "hardhat-abi-exporter": "^2.3.0",
     "hardhat-deploy": "^0.10.5",
     "keccak256": "^1.0.6",
-    "solidity-coverage": "^0.7.17"
+    "solidity-coverage": "^0.7.17",
+    "dotenv": "^10.0.0",
+    "solhint": "^3.3.7"
   },
   "dependencies": {
-    "@openzeppelin/contracts": "^4.6.0",
-    "dotenv": "^10.0.0",
-    "erc721a": "3.2.0",
-    "solhint": "^3.3.7"
+    "@openzeppelin/contracts": "4.7.3",
+    "@openzeppelin/contracts-upgradeable": "4.7.3",
+    "erc721a": "3.2.0"
   }
 }
