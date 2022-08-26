@@ -2,7 +2,7 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
   const { deploy } = deployments;
   const { deployer } = await getNamedAccounts();
 
-  await deploy("ERC721NFTProductContract", {
+  await deploy("ERC721NFTProductStandalone", {
     from: deployer,
     log: true,
     args: [
@@ -24,4 +24,4 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
   });
 };
 
-module.exports.tags = ["NFTCollectionContract"];
+module.exports.tags = ["ERC721NFTProductStandalone"];
