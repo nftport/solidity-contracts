@@ -29,6 +29,8 @@ contract NFTCollection is ERC721A, ERC2981, AccessControl, Initializable {
         uint256 maxSupply;
         // The number of free token mints reserved for the contract owner
         uint256 reservedSupply;
+        // The number of free token mints reserved for customers (airdrops)
+        uint256 airdropSupply;
         /// The maximum number of tokens the user can mint per transaction.
         uint256 tokensPerMint;
         // Treasury address is the address where minting fees can be withdrawn to.
@@ -85,7 +87,7 @@ contract NFTCollection is ERC721A, ERC2981, AccessControl, Initializable {
      *************/
 
     /// Contract version, semver-style uint X_YY_ZZ
-    uint256 public constant VERSION = 1_03_00;
+    uint256 public constant VERSION = 1_04_00;
 
     /// Admin role
     bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
@@ -98,9 +100,13 @@ contract NFTCollection is ERC721A, ERC2981, AccessControl, Initializable {
      * Public variables *
      ********************/
 
-    /// The number of tokens remaining in the reserve
+    /// The number of tokens remaining in the owner reserve
     /// @dev Managed by the contract
     uint256 public reserveRemaining;
+
+    /// The number of tokens remaining in the airdrop customer reserve
+    /// @dev Managed by the contract
+    uint256 public airdropRemaining;
 
     /***************************
      * Contract initialization *
@@ -125,6 +131,7 @@ contract NFTCollection is ERC721A, ERC2981, AccessControl, Initializable {
         _runtimeConfig = runtimeConfig;
 
         reserveRemaining = deploymentConfig.reservedSupply;
+        airdropRemaining = deploymentConfig.airdropSupply;
     }
 
     /****************
@@ -180,7 +187,7 @@ contract NFTCollection is ERC721A, ERC2981, AccessControl, Initializable {
 
     /// Get the number of tokens still available for minting
     function availableSupply() public view returns (uint256) {
-        return _deploymentConfig.maxSupply - totalSupply() - reserveRemaining;
+        return _deploymentConfig.maxSupply - totalSupply() - reserveRemaining - airdropRemaining;
     }
 
     /// Check if the wallet is whitelisted for the presale
@@ -229,14 +236,25 @@ contract NFTCollection is ERC721A, ERC2981, AccessControl, Initializable {
      * Admin actions *
      *****************/
 
-    /// Mint a token from the reserve
+    /// Mint a token from the owner reserve
     function reserveMint(address to, uint256 amount)
         external
         onlyRole(ADMIN_ROLE)
     {
-        require(amount <= reserveRemaining, "Not enough reserved");
+        require(amount <= reserveRemaining, "Not enough owner reserved");
 
         reserveRemaining -= amount;
+        _mintTokens(to, amount);
+    }
+
+    /// Mint a token from the airdrop customer reserve
+    function airdropMint(address to, uint256 amount)
+        external
+        onlyRole(ADMIN_ROLE)
+    {
+        require(amount <= airdropRemaining, "Not enough airdrop customer reserved");
+
+        airdropRemaining -= amount;
         _mintTokens(to, amount);
     }
 
@@ -300,7 +318,11 @@ contract NFTCollection is ERC721A, ERC2981, AccessControl, Initializable {
         require(config.owner != address(0), "Contract must have an owner");
         require(
             config.reservedSupply <= config.maxSupply,
-            "Reserve greater than supply"
+            "Owner reserve greater than supply"
+        );
+        require(
+            config.airdropSupply <= config.maxSupply,
+            "Airdrop customer reserve greater than supply"
         );
     }
 
@@ -480,6 +502,10 @@ contract NFTCollection is ERC721A, ERC2981, AccessControl, Initializable {
 
     function reservedSupply() public view returns (uint256) {
         return _deploymentConfig.reservedSupply;
+    }
+
+    function airdropSupply() public view returns (uint256) {
+        return _deploymentConfig.airdropSupply;
     }
 
     function publicMintPrice() public view returns (uint256) {
