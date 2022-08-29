@@ -83,6 +83,13 @@ contract NFTCollection is ERC721A, ERC2981, AccessControl, Initializable {
     );
 
     /*************
+     * Enums *
+     *************/
+
+    /// Different mint types to be used for validations and filtrations
+    enum MintType {AirDrop, PreSale, PublicSale, Reserved}
+
+    /*************
      * Constants *
      *************/
 
@@ -145,8 +152,7 @@ contract NFTCollection is ERC721A, ERC2981, AccessControl, Initializable {
         paymentProvided(amount * _runtimeConfig.publicMintPrice)
     {
         require(mintingActive(), "Minting has not started yet");
-
-        _mintTokens(msg.sender, amount);
+        _mintTokens(msg.sender, amount, MintType.PublicSale);
     }
 
     /// Mint tokens if the wallet has been whitelisted
@@ -162,7 +168,7 @@ contract NFTCollection is ERC721A, ERC2981, AccessControl, Initializable {
         );
 
         _presaleMinted[msg.sender] = true;
-        _mintTokens(msg.sender, amount);
+        _mintTokens(msg.sender, amount, MintType.PreSale);
     }
 
     /******************
@@ -244,7 +250,7 @@ contract NFTCollection is ERC721A, ERC2981, AccessControl, Initializable {
         require(amount <= reserveRemaining, "Not enough owner reserved");
 
         reserveRemaining -= amount;
-        _mintTokens(to, amount);
+        _mintTokens(to, amount, MintType.Reserved);
     }
 
     /// Mint a token from the airdrop customer reserve
@@ -255,7 +261,7 @@ contract NFTCollection is ERC721A, ERC2981, AccessControl, Initializable {
         require(amount <= airdropRemaining, "Not enough airdrop customer reserved");
 
         airdropRemaining -= amount;
-        _mintTokens(to, amount);
+        _mintTokens(to, amount, MintType.AirDrop);
     }
 
     /// Get full contract information
@@ -297,8 +303,11 @@ contract NFTCollection is ERC721A, ERC2981, AccessControl, Initializable {
     mapping(address => bool) internal _presaleMinted;
 
     /// @dev Internal function for performing token mints
-    function _mintTokens(address to, uint256 amount) internal {
-        require(amount <= _deploymentConfig.tokensPerMint, "Amount too large");
+    /// Only check amount if PreSale or PublicSale is performed as this limits the amount that non owners will mint. AirDrop and Reserved allows for any amount of mints as the owner will mint these items.
+    function _mintTokens(address to, uint256 amount, MintType _mintType) internal {
+        if (_mintType == MintType.PreSale || _mintType == MintType.PublicSale) {
+            require(amount <= _deploymentConfig.tokensPerMint, "Amount too large");
+        }
         require(amount <= availableSupply(), "Not enough tokens left");
 
         _safeMint(to, amount);
