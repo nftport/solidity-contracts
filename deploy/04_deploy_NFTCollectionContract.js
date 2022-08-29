@@ -12,6 +12,7 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
         symbol: "NFT",
         maxSupply: 1000,
         reservedSupply: 0,
+        airdropSupply: 0,
         tokensPerMint: 10,
         treasuryAddress: deployer,
       },
