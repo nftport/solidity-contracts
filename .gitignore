@@ -1,0 +1,10 @@
+deployments/localhost/
+node_modules/
+artifacts/
+coverage/
+cache/
+docs/
+
+coverage.json
+**/.DS_Store
+.envrc

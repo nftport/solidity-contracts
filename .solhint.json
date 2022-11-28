@@ -1,0 +1,11 @@
+{
+  "extends": "solhint:recommended",
+  "plugins": ["prettier"],
+  "rules": {
+    "prettier/prettier": "error",
+    "compiler-version": ["error", "^0.8.13"],
+    "func-visibility": ["warn", { "ignoreConstructors": true }],
+    "private-vars-leading-underscore": "warn",
+    "modifier-name-mixedcase": "warn"
+  }
+}
