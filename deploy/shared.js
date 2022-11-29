@@ -5,7 +5,6 @@ const gasParams = {
     maxFeePerGas: ethers.utils.parseUnits("100", "gwei"),
     maxPriorityFeePerGas: ethers.utils.parseUnits("3", "gwei"),
   },
-  rinkeby: {},
   polygon: {},
   hardhat: {},
   localhost: {},

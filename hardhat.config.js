@@ -24,7 +24,6 @@ module.exports = {
       // Defaults to second account
       default: 1,
       mainnet: "0xb3613DA07178a0beE44b48FBBCe1fa70Ff5d2DCC", // https://gnosis-safe.io/app/eth:0xb3613DA07178a0beE44b48FBBCe1fa70Ff5d2DCC
-      rinkeby: "0x0e119b7CCD4603F209aF071DBD9eDe69D66Ced31", // https://gnosis-safe.io/app/rin:0x0e119b7CCD4603F209aF071DBD9eDe69D66Ced31
       goerli: "0x534b107C4958e2AEddf47C438bd4388e2Bd5402A", // https://gnosis-safe.io/app/gor:0x534b107C4958e2AEddf47C438bd4388e2Bd5402A
       // polygon: '',
     },
@@ -32,7 +31,6 @@ module.exports = {
       // Defaults to third account
       default: 2,
       mainnet: "0xFe9609570EE974bFBf29691Db9c6f6d2512D623A",
-      rinkeby: "0xa5E346307bd4C7067C9C2cBfd1992B0C5603683C",
       goerli: "0xf2e5fEb12556400E0702edeeA26938E90D7a5Ea2",
       // polygon: '',
     },
@@ -40,13 +38,6 @@ module.exports = {
   networks: {
     hardhat: {
       chainId: parseInt(process.env.CHAIN_ID || "31337"),
-    },
-    rinkeby: {
-      url: `https://eth-rinkeby.alchemyapi.io/v2/${process.env.ALCHEMY_PROJECT_ID}`,
-      accounts: process.env.DEPLOYER_WALLET
-        ? [process.env.DEPLOYER_WALLET]
-        : undefined,
-      etherscan: { apiKey: process.env.API_KEY_ETHERSCAN },
     },
     mainnet: {
       url: `https://eth-mainnet.alchemyapi.io/v2/${process.env.ALCHEMY_PROJECT_ID}`,
