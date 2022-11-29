@@ -22,4 +22,4 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
   );
 };
 
-module.exports.tags = ["Factory", "EVM"];
+module.exports.tags = ["Factory"];

@@ -22,4 +22,4 @@ module.exports = async ({ deployments }) => {
 };
 
 module.exports.dependencies = ["Factory"];
-module.exports.tags = ["NFTCollection", "EVM", "Templates"];
+module.exports.tags = ["NFTCollection", "Templates"];

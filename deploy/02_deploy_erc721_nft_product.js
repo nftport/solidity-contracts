@@ -24,4 +24,4 @@ module.exports = async ({ deployments }) => {
 };
 
 module.exports.dependencies = ["Factory"];
-module.exports.tags = ["ERC721NFTProduct", "EVM", "Templates"];
+module.exports.tags = ["ERC721NFTProduct", "Templates"];
