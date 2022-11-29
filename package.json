@@ -4,11 +4,11 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "docs": "hardhat docgen",
     "start": "hardhat watch dev",
-    "test": "DETERMINISTIC_TESTS=true REPORT_GAS=true REPORT_CONTRACT_SIZE=true GENERATE_DOCS=true RUN_SLOW_TESTS=true hardhat test",
-    "coverage": "RUN_SLOW_TESTS=true hardhat coverage",
-    "lint": "solhint contracts/**/*.sol",
     "node": "hardhat node --hostname 127.0.0.1",
+    "coverage": "RUN_SLOW_TESTS=true hardhat coverage",
+    "test": "DETERMINISTIC_TESTS=true REPORT_GAS=true REPORT_CONTRACT_SIZE=true RUN_SLOW_TESTS=true hardhat test",
     "deploy:localhost": "hardhat --network localhost deploy",
     "deploy:polygon": "hardhat --network polygon deploy",
     "deploy:mainnet": "hardhat --network mainnet deploy",
@@ -40,8 +40,6 @@
     "hardhat-watcher": "^2.1.1",
     "keccak256": "^1.0.6",
     "merkletreejs": "^0.2.27",
-    "solhint": "^3.3.7",
-    "solhint-plugin-prettier": "^0.0.5",
     "solidity-coverage": "^0.7.19",
     "solidity-docgen": "^0.6.0-beta.29"
   },
