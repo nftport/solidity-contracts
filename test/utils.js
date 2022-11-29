@@ -43,7 +43,7 @@ async function deploy(contractName, ...args) {
 async function deployInstance(name, ...args) {
   const { deployer, user, factorySigner } = await signers();
 
-  await deployments.fixture(["Factory", "Templates"]);
+  await deployments.fixture(["Factory", "Template"]);
   const template = await ethers.getContract(name);
   const version = await template.VERSION();
 

@@ -31,4 +31,4 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
   });
 };
 
-module.exports.tags = ["NFTCollectionContract"];
+module.exports.tags = ["NFTCollectionContract", "Standalone"];
