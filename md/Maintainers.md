@@ -74,7 +74,7 @@ npm run deploy:<network> -- --tags <template name>
 The template deployment scripts compile and deploy the template contracts and execute the template registration method in `Factory`
 Like with `Factory` upgrades, the deployment script specifies that the template registration transaction should come from the `factoryOwner` wallet so `hardhat-deploy` will try to find a matching signer and if none are found, assumes that the account is an external one and prints out transaction data to execute.
 
-### Step 2: Upgrading the proxy
+### Step 2: Registering the template
 
 Get the transaction data from Step 1 and execute it through the appropriate multisig. See [Transacting using multisig](#transacting-using-multisig) for details.
 
