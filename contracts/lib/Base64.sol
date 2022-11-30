@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity >=0.8.14;
 
 /// @title Base64
 /// @notice Provides a function for encoding some bytes in base64
 /// @author Brecht Devos <brecht@loopring.org>
 library Base64 {
-    bytes internal constant TABLE = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+    bytes internal constant _TABLE =
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
     /// @notice Encodes some bytes to the base64 representation
     function encode(bytes memory data) internal pure returns (string memory) {
@@ -18,9 +19,9 @@ library Base64 {
         // Add some extra buffer at the end
         bytes memory result = new bytes(encodedLen + 32);
 
-        bytes memory table = TABLE;
+        bytes memory table = _TABLE;
 
-        // solium-disable-next-line security/no-inline-assembly
+        // solhint-disable-next-line no-inline-assembly
         assembly {
             let tablePtr := add(table, 1)
             let resultPtr := add(result, 32)
@@ -28,7 +29,7 @@ library Base64 {
             for {
                 let i := 0
             } lt(i, len) {
-
+                // solhint-disable-previous-line no-empty-blocks
             } {
                 i := add(i, 3)
                 let input := and(mload(add(data, i)), 0xffffff)

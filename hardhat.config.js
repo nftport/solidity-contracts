@@ -1,56 +1,15 @@
-require("dotenv").config();
-const POLYGON_PRIVATE_KEY_MUMBAI = process.env.POLYGON_PRIVATE_KEY_MUMBAI;
-const POLYGON_PRIVATE_KEY_MAINNET = process.env.POLYGON_PRIVATE_KEY_MAINNET;
-
-const ETHEREUM_PRIVATE_KEY_RINKEBY = process.env.ETHEREUM_PRIVATE_KEY_RINKEBY;
-const RINKEBY_GATEWAY_URL = process.env.RINKEBY_GATEWAY_URL;
-
-const ETHEREUM_PRIVATE_KEY_MAINNET = process.env.ETHEREUM_PRIVATE_KEY_MAINNET;
-
-require("solidity-coverage");
-require("@nomiclabs/hardhat-waffle");
 require("hardhat-deploy");
+require("solidity-docgen");
+require("hardhat-watcher");
+require("solidity-coverage");
+require("hardhat-gas-reporter");
+require("hardhat-contract-sizer");
+require("@nomiclabs/hardhat-waffle");
 require("@nomiclabs/hardhat-ethers");
 
-// This is a sample Hardhat task. To learn how to create your own go to
-// https://hardhat.org/guides/create-task.html
-task("accounts", "Prints the list of accounts", async () => {
-  const accounts = await ethers.getSigners();
-
-  for (const account of accounts) {
-    console.log(account.address);
-  }
-});
-
-// You need to export an object to set up your config
-// Go to https://hardhat.org/config/ to learn more
-
-/**
- * @type import('hardhat/config').HardhatUserConfig
- */
 module.exports = {
-  networks: {
-    polygon: {
-      url: "https://rpc-mainnet.maticvigil.com/",
-      accounts: [POLYGON_PRIVATE_KEY_MAINNET],
-      etherscan: { apiKey: process.env.API_KEY_POLYGONSCAN },
-    },
-    mumbai: {
-      url: "https://rpc-mumbai.maticvigil.com",
-      accounts: [POLYGON_PRIVATE_KEY_MUMBAI],
-      etherscan: { apiKey: process.env.API_KEY_POLYGONSCAN },
-    },
-    rinkeby: {
-      url: RINKEBY_GATEWAY_URL,
-      accounts: [ETHEREUM_PRIVATE_KEY_RINKEBY],
-      etherscan: { apiKey: process.env.API_KEY_ETHERSCAN },
-    },
-  },
-  namedAccounts: {
-    deployer: 0,
-  },
   solidity: {
-    version: "0.8.9",
+    version: "0.8.15",
     settings: {
       optimizer: {
         enabled: true,
@@ -58,13 +17,73 @@ module.exports = {
       },
     },
   },
-  paths: {
-    sources: "./contracts",
-    tests: "./test",
-    cache: "./cache",
-    artifacts: "./artifacts",
+  namedAccounts: {
+    // Always the first account
+    deployer: 0,
+    factoryOwner: {
+      // Defaults to second account
+      default: 1,
+      mainnet: "0xb3613DA07178a0beE44b48FBBCe1fa70Ff5d2DCC", // https://gnosis-safe.io/app/eth:0xb3613DA07178a0beE44b48FBBCe1fa70Ff5d2DCC
+      goerli: "0x534b107C4958e2AEddf47C438bd4388e2Bd5402A", // https://gnosis-safe.io/app/gor:0x534b107C4958e2AEddf47C438bd4388e2Bd5402A
+      // polygon: '',
+    },
+    factorySigner: {
+      // Defaults to third account
+      default: 2,
+      mainnet: "0xFe9609570EE974bFBf29691Db9c6f6d2512D623A",
+      goerli: "0xf2e5fEb12556400E0702edeeA26938E90D7a5Ea2",
+      // polygon: '',
+    },
   },
-  mocha: {
-    timeout: 20000,
+  networks: {
+    hardhat: {
+      chainId: parseInt(process.env.CHAIN_ID || "31337"),
+    },
+    mainnet: {
+      url: `https://eth-mainnet.alchemyapi.io/v2/${process.env.ALCHEMY_PROJECT_ID}`,
+      accounts: process.env.DEPLOYER_WALLET
+        ? [process.env.DEPLOYER_WALLET]
+        : undefined,
+      etherscan: { apiKey: process.env.API_KEY_ETHERSCAN },
+    },
+    polygon: {
+      url: "https://polygon-rpc.com",
+      accounts: process.env.DEPLOYER_WALLET
+        ? [process.env.DEPLOYER_WALLET]
+        : undefined,
+      etherscan: { apiKey: process.env.API_KEY_POLYGONSCAN },
+    },
+    goerli: {
+      url: `https://eth-goerli.alchemyapi.io/v2/${process.env.ALCHEMY_PROJECT_ID}`,
+      accounts: process.env.DEPLOYER_WALLET
+        ? [process.env.DEPLOYER_WALLET]
+        : undefined,
+      etherscan: { apiKey: process.env.API_KEY_ETHERSCAN },
+    },
+  },
+  watcher: {
+    dev: {
+      tasks: ["test"],
+      files: ["./contracts", "./test"],
+    },
+    docs: {
+      tasks: ["docgen"],
+      files: ["./contracts"],
+    },
+  },
+  gasReporter: {
+    enabled: !!process.env.REPORT_GAS,
+    currency: "USD",
+    gasPrice: 55,
+    coinmarketcap: process.env.CMC_API_KEY,
+  },
+  contractSizer: {
+    runOnCompile: !!process.env.REPORT_CONTRACT_SIZE,
+  },
+  docgen: {
+    path: "./docs",
+    clear: true,
+    runOnCompile: !!process.env.GENERATE_DOCS,
+    pages: "files",
   },
 };
